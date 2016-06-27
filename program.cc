@@ -25,6 +25,8 @@
 
 using namespace std;
 
+#include <string.h>
+
 #include "mem816.h"
 #include "emu816.h"
 

@@ -1,5 +1,5 @@
 
-CPPFLAGS=-O
+CPPFLAGS=-O3
 
 all:	emu816
 
