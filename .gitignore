@@ -1,2 +1,7 @@
 *.o
 emu816
+/.vs
+/Debug
+/examples/simple/simple.obj
+/emu816.VC.VC.opendb
+/emu816.VC.db

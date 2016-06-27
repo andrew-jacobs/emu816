@@ -1,3 +1,23 @@
+//==============================================================================
+//                                          .ooooo.     .o      .ooo   
+//                                         d88'   `8. o888    .88'     
+//  .ooooo.  ooo. .oo.  .oo.   oooo  oooo  Y88..  .8'  888   d88'      
+// d88' `88b `888P"Y88bP"Y88b  `888  `888   `88888b.   888  d888P"Ybo. 
+// 888ooo888  888   888   888   888   888  .8'  ``88b  888  Y88[   ]88 
+// 888    .o  888   888   888   888   888  `8.   .88P  888  `Y88   88P 
+// `Y8bod8P' o888o o888o o888o  `V88V"V8P'  `boood8'  o888o  `88bod8'  
+//                                                                    
+// A Portable C++ WDC 65C816 Emulator  
+//------------------------------------------------------------------------------
+// Copyright (C)2016 Andrew John Jacobs
+// All rights reserved.
+//
+// This work is made available under the terms of the Creative Commons
+// Attribution-NonCommercial-ShareAlike 4.0 International license. Open the
+// following URL to see the details.
+//
+// http://creativecommons.org/licenses/by-nc-sa/4.0/
+//------------------------------------------------------------------------------
 
 #include <iostream>
 #include <fstream>
@@ -9,36 +29,34 @@ using namespace std;
 #include "emu816.h"
 
 //==============================================================================
-// Memory Definitions and Access
+// Memory Definitions
 //------------------------------------------------------------------------------
 
-#define	RAM_SIZE	(384 * 1024)
-#define ROM_SIZE	(128 * 1024L)
+// On Windows/Linux create a 512Kb RAM area - No ROM.
+#define	RAM_SIZE	(512 * 1024)
 #define MEM_MASK	(512 * 1024L - 1)
 
-// The ROM area 128K
-const wdc816::Byte	ROM[ROM_SIZE] =
-{
-	0x00, 0x00, 0x00,
-};
-
-mem816 mem(MEM_MASK, RAM_SIZE, ROM);
+mem816 mem(MEM_MASK, RAM_SIZE, NULL);
 emu816 emu(mem);
 
-//==============================================================================
-//------------------------------------------------------------------------------
+bool trace = false;
 
+//==============================================================================
+
+// Initialise the emulator
 void setup()
 {
-	emu.reset();
+	emu.reset(trace);
 }
 
+// Execute instructions
 void loop()
 {
 	emu.step();
 }
 
 //==============================================================================
+// S28 Record Loader
 //------------------------------------------------------------------------------
 
 unsigned int toNybble(char ch)
@@ -66,6 +84,10 @@ unsigned long toAddr(string &str, int &offset)
 	return (h | m | l);
 }
 
+//==============================================================================
+// Command Handler
+//------------------------------------------------------------------------------
+
 void load(char *filename)
 {
 	ifstream	file(filename);
@@ -86,15 +108,43 @@ void load(char *filename)
 				}
 			}
 		}
+		file.close();
 	}
+	else
+		cerr << "Failed to open file" << endl;
 
-	file.close();
 }
 
 int main(int argc, char **argv)
 {
-	for (int index = 1; index < argc;)
-		load(argv[index++]);
+	int	index = 1;
+
+	while (index < argc) {
+		if (argv[index][0] != '-') break;
+
+		if (!strcmp(argv[index], "-t")) {
+			trace = true;
+			++index;
+			continue;
+		}
+
+		if (!strcmp(argv[index], "-?")) {
+			cerr << "Usage: emu816 [-t] s28-file ..." << endl;
+			return (1);
+		}
+
+		cerr << "Invalid: option '" << argv[index] << "'" << endl;
+		return (1);
+	}
+
+	if (index < argc)
+		do {
+			load(argv[index++]);
+		} while (index < argc);
+	else {
+		cerr << "No S28 files specified" << endl;
+		return (1);
+	}
 
 	setup();
 	for (;;) loop();

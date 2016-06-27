@@ -1,15 +1,39 @@
-#ifndef EMU816
-#define EMU816
+//==============================================================================
+//                                          .ooooo.     .o      .ooo   
+//                                         d88'   `8. o888    .88'     
+//  .ooooo.  ooo. .oo.  .oo.   oooo  oooo  Y88..  .8'  888   d88'      
+// d88' `88b `888P"Y88bP"Y88b  `888  `888   `88888b.   888  d888P"Ybo. 
+// 888ooo888  888   888   888   888   888  .8'  ``88b  888  Y88[   ]88 
+// 888    .o  888   888   888   888   888  `8.   .88P  888  `Y88   88P 
+// `Y8bod8P' o888o o888o o888o  `V88V"V8P'  `boood8'  o888o  `88bod8'  
+//                                                                    
+// A Portable C++ WDC 65C816 Emulator  
+//------------------------------------------------------------------------------
+// Copyright (C)2016 Andrew John Jacobs
+// All rights reserved.
+//
+// This work is made available under the terms of the Creative Commons
+// Attribution-NonCommercial-ShareAlike 4.0 International license. Open the
+// following URL to see the details.
+//
+// http://creativecommons.org/licenses/by-nc-sa/4.0/
+//------------------------------------------------------------------------------
+
+#ifndef EMU816_H
+#define EMU816_H
+
 #include "mem816.h"
 
+#include <stdlib.h>
+
 #if 1
-# define TRACE(MNEM)	{ dump(MNEM, ea); }
-# define BYTES(N)		{ bytes(N); pc += N; }
-# define SHOWPC()		{ show(); }
+# define TRACE(MNEM)	{ if (trace) dump(MNEM, ea); }
+# define BYTES(N)		{ if (trace) bytes(N); pc += N; }
+# define SHOWPC()		{ if (trace) show(); }
 # ifdef CHIPKIT
 # define ENDL()			{ Serial.println (); }
 # else
-# define ENDL()			{ cout << endl; }
+# define ENDL()			{ if (trace) cout << endl; }
 # endif
 #else
 # define TRACE(MNEM)
@@ -25,7 +49,7 @@ public:
 	emu816(mem816 &mem);
 	~emu816();
 
-	void reset();
+	void reset(bool trace);
 	void step();
 
 private:
@@ -57,11 +81,13 @@ private:
 
 	bool			interrupted;
 	unsigned long	cycles;
+	bool			trace;
 
 	void show();
 	void bytes(unsigned int);
 	void dump(const char *, Addr);
 
+	// Push a byte on the stack
 	INLINE void pushByte(Byte value)
 	{
 		mem.setByte(sp.w, value);
@@ -72,12 +98,14 @@ private:
 			--sp.w;
 	}
 
+	// Push a word on the stack
 	INLINE void pushWord(Word value)
 	{
 		pushByte(hi(value));
 		pushByte(lo(value));
 	}
 
+	// Pull a byte from the stack
 	INLINE Byte pullByte()
 	{
 		if (e)
@@ -88,6 +116,7 @@ private:
 		return (mem.getByte(sp.w));
 	}
 
+	// Pull a word from the stack
 	INLINE Word pullWord()
 	{
 		register Byte	l = pullByte();
@@ -292,6 +321,7 @@ private:
 		return (ea);
 	}
 
+	// Long Relative - d
 	INLINE Addr am_lrel()
 	{
 		Word disp = mem.getWord(bank(pbr) | pc);
@@ -300,6 +330,7 @@ private:
 		return (bank(pbr) | (Word)(pc + (signed short)disp));
 	}
 
+	// Relative - d
 	INLINE Addr am_rela()
 	{
 		Byte disp = mem.getByte(bank(pbr) | pc);
@@ -337,42 +368,50 @@ private:
 		return (bank(dbr) | (Word)(ia + y.w));
 	}
 
+	// Set the Negative flag
 	INLINE void setn(unsigned int flag)
 	{
 		p.f_n = flag ? 1 : 0;
 	}
 
+	// Set the Overflow flag
 	INLINE void setv(unsigned int flag)
 	{
 		p.f_v = flag ? 1 : 0;
 	}
 
+	// Set the decimal flag
 	INLINE void setd(unsigned int flag)
 	{
 		p.f_d = flag ? 1 : 0;
 	}
 
+	// Set the Interrupt Disable flag
 	INLINE void seti(unsigned int flag)
 	{
 		p.f_i = flag ? 1 : 0;
 	}
 
+	// Set the Zero flag
 	INLINE void setz(unsigned int flag)
 	{
 		p.f_z = flag ? 1 : 0;
 	}
 
+	// Set the Carry flag
 	INLINE void setc(unsigned int flag)
 	{
 		p.f_c = flag ? 1 : 0;
 	}
 
+	// Set the Negative and Zero flags from a byte value
 	INLINE void setnz_b(Byte value)
 	{
 		setn(value & 0x80);
 		setz(value == 0);
 	}
 
+	// Set the Negative and Zero flags from a word value
 	INLINE void setnz_w(Word value)
 	{
 		setn(value & 0x8000);
@@ -1441,6 +1480,10 @@ private:
 	INLINE void op_wdm(Addr ea)
 	{
 		TRACE("WDM");
+
+		switch (mem.getByte(ea)) {
+		case 0xff:	exit(0);
+		}
 	}
 
 	INLINE void op_xba(Addr ea)

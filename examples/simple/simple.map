@@ -1,0 +1,9 @@
+Global Symbol Map
+
+
+
+Sections:
+
+.page0           : 00000000 - 0000007F in simple.obj
+.code            : 0000F000 - 0000F01B in simple.obj
+                   0000FFE0 - 0000FFFF in simple.obj
