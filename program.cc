@@ -27,7 +27,11 @@ using namespace std;
 
 #include <string.h>
 
+#ifdef WINDOWS
 #include "Windows.h"
+#else
+#include <time.h>
+#endif
 
 #include "mem816.h"
 #include "emu816.h"
@@ -150,18 +154,31 @@ int main(int argc, char **argv)
 		return (1);
 	}
 
+#ifdef	WINDOWS
 	LARGE_INTEGER freq, start, end;
 
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
+#else
+	timespec start, end;
+
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+#endif
 
 	setup();
-	while (!emu.isStopped ())
+	while (!emu.isStopped())
 		loop();
 
+#ifdef	LINUX
 	QueryPerformanceCounter(&end);
 
 	double secs = (end.QuadPart - start.QuadPart) / (double) freq.QuadPart;
+#else
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+
+	double secs = (end.tv_sec + end.tv_nsec / 1000000000.0)
+		    - (start.tv_sec + start.tv_nsec / 1000000000.0);
+#endif
 
 	double speed = emu.getCycles() / secs;
 
