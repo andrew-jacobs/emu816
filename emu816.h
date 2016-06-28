@@ -52,6 +52,16 @@ public:
 	void reset(bool trace);
 	void step();
 
+	INLINE unsigned long getCycles() const
+	{
+		return (cycles);
+	}
+
+	INLINE bool isStopped() const
+	{
+		return (stopped);
+	}
+
 private:
 	union {
 		struct {
@@ -79,6 +89,7 @@ private:
 
 	mem816		   &mem;
 
+	bool			stopped;
 	bool			interrupted;
 	unsigned long	cycles;
 	bool			trace;
@@ -131,6 +142,7 @@ private:
 		register Addr	ea = join (dbr, mem.getWord(bank(pbr) | pc));
 
 		BYTES(2);
+		cycles += 2;
 		return (ea);
 	}
 
@@ -140,6 +152,7 @@ private:
 		register Addr	ea = join(dbr, mem.getWord(bank(pbr) | pc)) + x.w;
 
 		BYTES(2);
+		cycles += 2;
 		return (ea);
 	}
 
@@ -149,6 +162,7 @@ private:
 		register Addr	ea = join(dbr, mem.getWord(bank(pbr) | pc)) + y.w;
 
 		BYTES(2);
+		cycles += 2;
 		return (ea);
 	}
 
@@ -158,6 +172,7 @@ private:
 		register Addr ia = join(0, mem.getWord(bank(pbr) | pc));
 
 		BYTES(2);
+		cycles += 4;
 		return (join(0, mem.getWord(ia)));
 	}
 
@@ -167,6 +182,7 @@ private:
 		register Addr ia = join(pbr, mem.getWord(bank(pbr) | pc)) + x.w;
 
 		BYTES(2);
+		cycles += 4;
 		return (join(pbr, mem.getWord(ia)));
 	}
 
@@ -176,6 +192,7 @@ private:
 		Addr ea = mem.getAddr(bank(pbr) | pc);
 
 		BYTES(3);
+		cycles += 3;
 		return (ea);
 	}
 
@@ -185,6 +202,7 @@ private:
 		register Addr ea = mem.getAddr(bank(pbr) | pc) + x.w;
 
 		BYTES(3);
+		cycles += 3;
 		return (ea);
 	}
 
@@ -194,6 +212,7 @@ private:
 		register Addr ia = bank(0) | mem.getWord(bank(pbr) | pc);
 
 		BYTES(2);
+		cycles += 5;
 		return (mem.getAddr(ia));
 	}
 
@@ -203,6 +222,7 @@ private:
 		Byte offset = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 1;
 		return (bank(0) | (Word)(dp.w + offset));
 	}
 
@@ -212,6 +232,7 @@ private:
 		Byte offset = mem.getByte(bank(pbr) | pc) + x.b;
 
 		BYTES(1);
+		cycles += 1;
 		return (bank(0) | (Word)(dp.w + offset));
 	}
 
@@ -221,6 +242,7 @@ private:
 		Byte offset = mem.getByte(bank(pbr) | pc) + y.b;
 
 		BYTES(1);
+		cycles += 1;
 		return (bank(0) | (Word)(dp.w + offset));
 	}
 
@@ -230,6 +252,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 3;
 		return (bank(dbr) | mem.getWord(bank(0) | (Word)(dp.w + disp)));
 	}
 
@@ -239,6 +262,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 3;
 		return (bank(dbr) | mem.getWord(bank(0) | (Word)(dp.w + disp + x.w)));
 	}
 
@@ -248,6 +272,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 3;
 		return (bank(dbr) | mem.getWord(bank(0) | (dp.w + disp)) + y.w);
 	}
 
@@ -257,6 +282,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 4;
 		return (mem.getAddr(bank(0) | (Word)(dp.w + disp)));
 	}
 
@@ -266,6 +292,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 4;
 		return (mem.getAddr(bank(0) | (Word)(dp.w + disp)) + y.w);
 	}
 
@@ -289,6 +316,7 @@ private:
 		Addr ea = bank(pbr) | pc;
 
 		BYTES(1);
+		cycles += 0;
 		return (ea);
 	}
 
@@ -298,6 +326,7 @@ private:
 		Addr ea = bank(pbr) | pc;
 
 		BYTES(2);
+		cycles += 1;
 		return (ea);
 	}
 
@@ -308,6 +337,7 @@ private:
 		unsigned int size = (e || p.f_m) ? 1 : 2;
 
 		BYTES(size);
+		cycles += size - 1;
 		return (ea);
 	}
 
@@ -318,6 +348,7 @@ private:
 		unsigned int size = (e || p.f_x) ? 1 : 2;
 
 		BYTES(size);
+		cycles += size - 1;
 		return (ea);
 	}
 
@@ -327,6 +358,7 @@ private:
 		Word disp = mem.getWord(bank(pbr) | pc);
 
 		BYTES(2);
+		cycles += 2;
 		return (bank(pbr) | (Word)(pc + (signed short)disp));
 	}
 
@@ -336,6 +368,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 1;
 		return (bank(pbr) | (Word)(pc + (signed char)disp));
 	}
 
@@ -345,6 +378,7 @@ private:
 		Byte disp = mem.getByte(bank(pbr) | pc);
 
 		BYTES(1);
+		cycles += 1;
 
 		if (e)
 			return((bank(0) | join(sp.b + disp, hi(sp.w))));
@@ -359,6 +393,7 @@ private:
 		register Word ia;
 
 		BYTES(1);
+		cycles += 3;
 
 		if (e)
 			ia = mem.getWord(join(sp.b + disp, hi(sp.w)));
@@ -429,6 +464,7 @@ private:
 			setc(temp & 0x100);
 			setv((~(a.b ^ data)) & (a.b ^ temp) & 0x80);
 			setnz_b(a.b = lo(temp));
+			cycles += 2;
 		}
 		else {
 			Word	data = mem.getWord(ea);
@@ -437,6 +473,7 @@ private:
 			setc(temp & 0x100);
 			setv((~(a.w ^ data)) & (a.w ^ temp) & 0x8000);
 			setnz_w(a.w = (Word)temp);
+			cycles += 2;
 		}
 	}
 
@@ -444,10 +481,14 @@ private:
 	{
 		TRACE("AND");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			setnz_b(a.b &= mem.getByte(ea));
-		else
+			cycles += 2;
+		}
+		else {
 			setnz_w(a.w &= mem.getWord(ea));
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_asl(Addr ea)
@@ -460,6 +501,7 @@ private:
 			setc(data & 0x80);
 			setnz_b(data <<= 1);
 			mem.setByte(ea, data);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
@@ -467,6 +509,7 @@ private:
 			setc(data & 0x8000);
 			setnz_w(data <<= 1);
 			mem.setWord(ea, data);
+			cycles += 5;
 		}
 	}
 
@@ -484,30 +527,46 @@ private:
 			setnz_w(a.w <<= 1);
 			mem.setWord(ea, a.w);
 		}
+		cycles += 2;
 	}
 
 	INLINE void op_bcc(Addr ea)
 	{
 		TRACE("BCC");
 
-		if (p.f_c == 0)
+		if (p.f_c == 0) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_bcs(Addr ea)
 	{
 		TRACE("BCS");
 
-		if (p.f_c == 1)
+		if (p.f_c == 1) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_beq(Addr ea)
 	{
 		TRACE("BEQ");
 
-		if (p.f_z == 1)
+		if (p.f_z == 1) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_bit(Addr ea)
@@ -520,6 +579,7 @@ private:
 			setz((a.b & data) == 0);
 			setn(data & 0x80);
 			setv(data & 0x40);
+			cycles += 2;
 		}
 		else {
 			register Word data = mem.getWord(ea);
@@ -527,6 +587,8 @@ private:
 			setz((a.w & data) == 0);
 			setn(data & 0x8000);
 			setv(data & 0x4000);
+
+			cycles += 3;
 		}
 	}
 
@@ -544,37 +606,55 @@ private:
 
 			setz((a.w & data) == 0);
 		}
+		cycles += 2;
 	}
 
 	INLINE void op_bmi(Addr ea)
 	{
 		TRACE("BMI");
 
-		if (p.f_n == 1)
+		if (p.f_n == 1) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_bne(Addr ea)
 	{
 		TRACE("BNE");
 
-		if (p.f_z == 0)
+		if (p.f_z == 0) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_bpl(Addr ea)
 	{
 		TRACE("BPL");
 
-		if (p.f_n == 0)
+		if (p.f_n == 0) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_bra(Addr ea)
 	{
 		TRACE("BRA");
 
+		if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 		pc = (Word)ea;
+		cycles += 3;
 	}
 
 	INLINE void op_brk(Addr ea)
@@ -590,6 +670,7 @@ private:
 			pbr = 0;
 
 			pc = mem.getWord(0xfffe);
+			cycles += 7;
 		}
 		else {
 			pushByte(pbr);
@@ -601,6 +682,7 @@ private:
 			pbr = 0;
 
 			pc = mem.getWord(0xffe6);
+			cycles += 8;
 		}
 	}
 
@@ -609,22 +691,33 @@ private:
 		TRACE("BRL");
 
 		pc = (Word)ea;
+		cycles += 3;
 	}
 
 	INLINE void op_bvc(Addr ea)
 	{
 		TRACE("BVC");
 
-		if (p.f_v == 0)
+		if (p.f_v == 0) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_bvs(Addr ea)
 	{
 		TRACE("BVS");
 
-		if (p.f_v == 1)
+		if (p.f_v == 1) {
+			if (e && ((pc ^ ea) & 0xff00)) ++cycles;
 			pc = (Word)ea;
+			cycles += 3;
+		}
+		else
+			cycles += 2;
 	}
 
 	INLINE void op_clc(Addr ea)
@@ -632,27 +725,31 @@ private:
 		TRACE("CLC");
 
 		setc(0);
+		cycles += 2;
 	}
 
 	INLINE void op_cld(Addr ea)
 	{
 		TRACE("CLD")
 
-			setd(0);
+		setd(0);
+		cycles += 2;
 	}
 
 	INLINE void op_cli(Addr ea)
 	{
 		TRACE("CLI")
 
-			seti(0);
+		seti(0);
+		cycles += 2;
 	}
 
 	INLINE void op_clv(Addr ea)
 	{
 		TRACE("CLD")
 
-			setv(0);
+		setv(0);
+		cycles += 2;
 	}
 
 	INLINE void op_cmp(Addr ea)
@@ -665,6 +762,7 @@ private:
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
+			cycles += 2;
 		}
 		else {
 			Word	data = mem.getWord(ea);
@@ -672,6 +770,7 @@ private:
 
 			setc(temp & 0x10000L);
 			setnz_w((Word)temp);
+			cycles += 3;
 		}
 	}
 
@@ -688,6 +787,7 @@ private:
 			pbr = 0;
 
 			pc = mem.getWord(0xfff4);
+			cycles += 7;
 		}
 		else {
 			pushByte(pbr);
@@ -699,6 +799,7 @@ private:
 			pbr = 0;
 
 			pc = mem.getWord(0xffe4);
+			cycles += 8;
 		}
 	}
 
@@ -710,11 +811,13 @@ private:
 			Byte	data = mem.getByte(ea);
 			setnz_b(x.b - data);
 			setc(x.b >= data);
+			cycles += 2;
 		}
 		else {
 			Word	data = mem.getWord(ea);
 			setnz_w(x.w - data);
 			setc(x.w >= data);
+			cycles += 3;
 		}
 	}
 
@@ -726,11 +829,13 @@ private:
 			Byte	data = mem.getByte(ea);
 			setnz_b(y.b - data);
 			setc(y.b >= data);
+			cycles += 2;
 		}
 		else {
 			Word	data = mem.getWord(ea);
 			setnz_w(y.w - data);
 			setc(y.w >= data);
+			cycles += 3;
 		}
 	}
 
@@ -743,12 +848,14 @@ private:
 
 			mem.setByte(ea, ++data);
 			setnz_b(data);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
 
 			mem.setWord(ea, ++data);
 			setnz_w(data);
+			cycles += 5;
 		}
 	}
 
@@ -760,6 +867,8 @@ private:
 			setnz_b(--a.b);
 		else
 			setnz_w(--a.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_dex(Addr ea)
@@ -770,6 +879,8 @@ private:
 			setnz_b(x.b -= 1);
 		else
 			setnz_w(x.w -= 1);
+
+		cycles += 2;
 	}
 
 	INLINE void op_dey(Addr ea)
@@ -780,16 +891,22 @@ private:
 			setnz_b(y.b -= 1);
 		else
 			setnz_w(y.w -= 1);
+
+		cycles += 2;
 	}
 
 	INLINE void op_eor(Addr ea)
 	{
 		TRACE("EOR");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			setnz_b(a.b ^= mem.getByte(ea));
-		else
+			cycles += 2;
+		}
+		else {
 			setnz_w(a.w ^= mem.getWord(ea));
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_inc(Addr ea)
@@ -801,12 +918,14 @@ private:
 
 			mem.setByte(ea, ++data);
 			setnz_b(data);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
 
 			mem.setWord(ea, ++data);
 			setnz_w(data);
+			cycles += 5;
 		}
 	}
 
@@ -818,6 +937,8 @@ private:
 			setnz_b(++a.b);
 		else
 			setnz_w(++a.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_inx(Addr ea)
@@ -828,6 +949,8 @@ private:
 			setnz_b(++x.b);
 		else
 			setnz_w(++x.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_iny(Addr ea)
@@ -838,6 +961,8 @@ private:
 			setnz_b(++y.b);
 		else
 			setnz_w(++y.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_jmp(Addr ea)
@@ -846,6 +971,7 @@ private:
 
 		pbr = lo(ea >> 16);
 		pc = (Word)ea;
+		cycles += 1;
 	}
 
 	INLINE void op_jsl(Addr ea)
@@ -857,6 +983,7 @@ private:
 
 		pbr = lo(ea >> 16);
 		pc = (Word)ea;
+		cycles += 5;
 	}
 
 	INLINE void op_jsr(Addr ea)
@@ -866,36 +993,49 @@ private:
 		pushWord(pc - 1);
 
 		pc = (Word)ea;
+		cycles += 4;
 	}
 
 	INLINE void op_lda(Addr ea)
 	{
 		TRACE("LDA");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			setnz_b(a.b = mem.getByte(ea));
-		else
+			cycles += 2;
+		}
+		else {
 			setnz_w(a.w = mem.getWord(ea));
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_ldx(Addr ea)
 	{
 		TRACE("LDX");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			setnz_b(lo(x.w = mem.getByte(ea)));
-		else
+			cycles += 2;
+		}
+		else {
 			setnz_w(x.w = mem.getWord(ea));
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_ldy(Addr ea)
 	{
 		TRACE("LDY");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			setnz_b(lo(y.w = mem.getByte(ea)));
-		else
+			cycles += 2;
+		}
+		else {
 			setnz_w(y.w = mem.getWord(ea));
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_lsr(Addr ea)
@@ -908,6 +1048,7 @@ private:
 			setc(data & 0x01);
 			setnz_b(data >>= 1);
 			mem.setByte(ea, data);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
@@ -915,6 +1056,7 @@ private:
 			setc(data & 0x0001);
 			setnz_w(data >>= 1);
 			mem.setWord(ea, data);
+			cycles += 5;
 		}
 	}
 
@@ -932,31 +1074,52 @@ private:
 			setnz_w(a.w >>= 1);
 			mem.setWord(ea, a.w);
 		}
+		cycles += 2;
 	}
 
 	INLINE void op_mvn(Addr ea)
 	{
 		TRACE("MVN");
+
+		Byte src = mem.getByte(ea + 0);
+		Byte dst = mem.getByte(ea + 1);
+
+		mem.setByte(join(dbr = dst, y.w++), mem.getByte(join(src, x.w++)));
+		if (--a.w != 0xffff) pc -= 3;
+		cycles += 7;
 	}
 
 	INLINE void op_mvp(Addr ea)
 	{
 		TRACE("MVP");
+
+		Byte src = mem.getByte(ea + 0);
+		Byte dst = mem.getByte(ea + 1);
+
+		mem.setByte(join(dbr = dst, y.w--), mem.getByte(join(src, x.w--)));
+		if (--a.w != 0xffff) pc -= 3;
+		cycles += 7;
 	}
 
 	INLINE void op_nop(Addr ea)
 	{
 		TRACE("NOP");
+
+		cycles += 2;
 	}
 
 	INLINE void op_ora(Addr ea)
 	{
 		TRACE("ORA");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			setnz_b(a.b |= mem.getByte(ea));
-		else
+			cycles += 2;
+		}
+		else {
 			setnz_w(a.w |= mem.getWord(ea));
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_pea(Addr ea)
@@ -964,26 +1127,37 @@ private:
 		TRACE("PEA");
 
 		pushWord(mem.getWord(ea));
+		cycles += 5;
 	}
 
 	INLINE void op_pei(Addr ea)
 	{
 		TRACE("PEI");
+
+		pushWord(mem.getWord(ea));
+		cycles += 6;
 	}
 
 	INLINE void op_per(Addr ea)
 	{
 		TRACE("PER");
+
+		pushWord((Word) ea);
+		cycles += 6;
 	}
 
 	INLINE void op_pha(Addr ea)
 	{
 		TRACE("PHA");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			pushByte(a.b);
-		else
+			cycles += 3;
+		}
+		else {
 			pushWord(a.w);
+			cycles += 4;
+		}
 	}
 
 	INLINE void op_phb(Addr ea)
@@ -991,6 +1165,7 @@ private:
 		TRACE("PHB");
 
 		pushByte(dbr);
+		cycles += 3;
 	}
 
 	INLINE void op_phd(Addr ea)
@@ -998,6 +1173,7 @@ private:
 		TRACE("PHD");
 
 		pushWord(dp.w);
+		cycles += 4;
 	}
 
 	INLINE void op_phk(Addr ea)
@@ -1005,6 +1181,7 @@ private:
 		TRACE("PHK");
 
 		pushByte(pbr);
+		cycles += 3;
 	}
 
 	INLINE void op_php(Addr ea)
@@ -1012,36 +1189,49 @@ private:
 		TRACE("PHP");
 
 		pushByte(p.b);
+		cycles += 3;
 	}
 
 	INLINE void op_phx(Addr ea)
 	{
 		TRACE("PHX");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			pushByte(x.b);
-		else
+			cycles += 3;
+		}
+		else {
 			pushWord(x.w);
+			cycles += 4;
+		}
 	}
 
 	INLINE void op_phy(Addr ea)
 	{
 		TRACE("PHY");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			pushByte(y.b);
-		else
+			cycles += 3;
+		}
+		else {
 			pushWord(y.w);
+			cycles += 4;
+		}
 	}
 
 	INLINE void op_pla(Addr ea)
 	{
 		TRACE("PLA");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			setnz_b(a.b = pullByte());
-		else
+			cycles += 4;
+		}
+		else {
 			setnz_w(a.w = pullWord());
+			cycles += 5;
+		}
 	}
 
 	INLINE void op_plb(Addr ea)
@@ -1049,6 +1239,7 @@ private:
 		TRACE("PLB");
 
 		setnz_b(dbr = pullByte());
+		cycles += 4;
 	}
 
 	INLINE void op_pld(Addr ea)
@@ -1056,6 +1247,7 @@ private:
 		TRACE("PLD");
 
 		setnz_w(dp.w = pullWord());
+		cycles += 5;
 	}
 
 	INLINE void op_plk(Addr ea)
@@ -1063,6 +1255,7 @@ private:
 		TRACE("PLK");
 
 		setnz_b(dbr = pullByte());
+		cycles += 4;
 	}
 
 	INLINE void op_plp(Addr ea)
@@ -1079,26 +1272,35 @@ private:
 				y.w = y.b;
 			}
 		}
+		cycles += 4;
 	}
 
 	INLINE void op_plx(Addr ea)
 	{
 		TRACE("PLX");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			setnz_b(lo(x.w = pullByte()));
-		else
+			cycles += 4;
+		}
+		else {
 			setnz_w(x.w = pullWord());
+			cycles += 5;
+		}
 	}
 
 	INLINE void op_ply(Addr ea)
 	{
 		TRACE("PLY");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			setnz_b(lo(y.w = pullByte()));
-		else
+			cycles += 4;
+		}
+		else {
 			setnz_w(y.w = pullWord());
+			cycles += 5;
+		}
 	}
 
 	INLINE void op_rep(Addr ea)
@@ -1107,6 +1309,7 @@ private:
 
 		p.b &= ~mem.getByte(ea);
 		if (e) p.f_m = p.f_x = 1;
+		cycles += 3;
 	}
 
 	INLINE void op_rol(Addr ea)
@@ -1120,6 +1323,7 @@ private:
 			setc(data & 0x80);
 			setnz_b(data = (data << 1) | carry);
 			mem.setByte(ea, data);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
@@ -1128,6 +1332,7 @@ private:
 			setc(data & 0x8000);
 			setnz_w(data = (data << 1) | carry);
 			mem.setWord(ea, data);
+			cycles += 5;
 		}
 	}
 
@@ -1149,6 +1354,7 @@ private:
 			setnz_w(a.w = (a.w << 1) | carry);
 			mem.setWord(ea, a.w);
 		}
+		cycles += 2;
 	}
 
 	INLINE void op_ror(Addr ea)
@@ -1162,6 +1368,7 @@ private:
 			setc(data & 0x80);
 			setnz_b(data = (data >> 1) | carry);
 			mem.setByte(ea, data);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
@@ -1170,6 +1377,7 @@ private:
 			setc(data & 0x8000);
 			setnz_w(data = (data >> 1) | carry);
 			mem.setWord(ea, data);
+			cycles += 5;
 		}
 	}
 
@@ -1191,14 +1399,7 @@ private:
 			setnz_w(a.w = (a.w >> 1) | carry);
 			mem.setWord(ea, a.w);
 		}
-	}
-
-	INLINE void op_rtl(Addr ea)
-	{
-		TRACE("RTL");
-
-		pc = pullWord();
-		pbr = pullByte();
+		cycles += 2;
 	}
 
 	INLINE void op_rti(Addr ea)
@@ -1208,13 +1409,24 @@ private:
 		if (e) {
 			p.b = pullByte();
 			pc = pullWord();
+			cycles += 6;
 		}
 		else {
 			p.b = pullByte();
 			pc = pullWord();
 			pbr = pullByte();
+			cycles += 7;
 		}
 		p.f_i = 0;
+	}
+
+	INLINE void op_rtl(Addr ea)
+	{
+		TRACE("RTL");
+
+		pc = pullWord();
+		pbr = pullByte();
+		cycles += 6;
 	}
 
 	INLINE void op_rts(Addr ea)
@@ -1222,6 +1434,7 @@ private:
 		TRACE("RTS");
 
 		pc = pullWord() + 1;
+		cycles += 6;
 	}
 
 	INLINE void op_sbc(Addr ea)
@@ -1235,6 +1448,7 @@ private:
 			setc(temp & 0x100);
 			setv((~(a.b ^ data)) & (a.b ^ temp) & 0x80);
 			setnz_b(a.b = lo(temp));
+			cycles += 2;
 		}
 		else {
 			Word	data = ~mem.getWord(ea);
@@ -1243,6 +1457,7 @@ private:
 			setc(temp & 0x100);
 			setv((~(a.w ^ data)) & (a.w ^ temp) & 0x8000);
 			setnz_w(a.w = (Word)temp);
+			cycles += 3;
 		}
 	}
 
@@ -1251,6 +1466,7 @@ private:
 		TRACE("SEC");
 
 		setc(1);
+		cycles += 2;
 	}
 
 	INLINE void op_sed(Addr ea)
@@ -1258,6 +1474,7 @@ private:
 		TRACE("SED");
 
 		setd(1);
+		cycles += 2;
 	}
 
 	INLINE void op_sei(Addr ea)
@@ -1265,6 +1482,7 @@ private:
 		TRACE("SEI");
 
 		seti(1);
+		cycles += 2;
 	}
 
 	INLINE void op_sep(Addr ea)
@@ -1278,16 +1496,21 @@ private:
 			x.w = x.b;
 			y.w = y.b;
 		}
+		cycles += 3;
 	}
 
 	INLINE void op_sta(Addr ea)
 	{
 		TRACE("STA");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			mem.setByte(ea, a.b);
-		else
+			cycles += 2;
+		}
+		else {
 			mem.setWord(ea, a.w);
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_stp(Addr ea)
@@ -1299,36 +1522,50 @@ private:
 		}
 		else
 			interrupted = false;
+
+		cycles += 3;
 	}
 
 	INLINE void op_stx(Addr ea)
 	{
 		TRACE("STX");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			mem.setByte(ea, x.b);
-		else
+			cycles += 2;
+		}
+		else {
 			mem.setWord(ea, x.w);
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_sty(Addr ea)
 	{
 		TRACE("STY");
 
-		if (e || p.f_x)
+		if (e || p.f_x) {
 			mem.setByte(ea, y.b);
-		else
+			cycles += 2;
+		}
+		else {
 			mem.setWord(ea, y.w);
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_stz(Addr ea)
 	{
 		TRACE("STZ");
 
-		if (e || p.f_m)
+		if (e || p.f_m) {
 			mem.setByte(ea, 0);
-		else
+			cycles += 2;
+		}
+		else {
 			mem.setWord(ea, 0);
+			cycles += 3;
+		}
 	}
 
 	INLINE void op_tax(Addr ea)
@@ -1339,6 +1576,8 @@ private:
 			setnz_b(lo(x.w = a.b));
 		else
 			setnz_w(x.w = a.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_tay(Addr ea)
@@ -1349,6 +1588,8 @@ private:
 			setnz_b(lo(y.w = a.b));
 		else
 			setnz_w(y.w = a.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_tcd(Addr ea)
@@ -1356,6 +1597,7 @@ private:
 		TRACE("TCD");
 
 		dp.w = a.w;
+		cycles += 2;
 	}
 
 	INLINE void op_tdc(Addr ea)
@@ -1366,6 +1608,8 @@ private:
 			setnz_b(lo(a.w = dp.w));
 		else
 			setnz_w(a.w = dp.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_tcs(Addr ea)
@@ -1373,6 +1617,7 @@ private:
 		TRACE("TCS");
 
 		sp.w = e ? (0x0100 | a.b) : a.w;
+		cycles += 2;
 	}
 
 	INLINE void op_trb(Addr ea)
@@ -1384,12 +1629,14 @@ private:
 
 			mem.setByte(ea, data & ~a.b);
 			setz((a.b & data) == 0);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
 
 			mem.setWord(ea, data & ~a.w);
 			setz((a.w & data) == 0);
+			cycles += 5;
 		}
 	}
 
@@ -1402,12 +1649,14 @@ private:
 
 			mem.setByte(ea, data | a.b);
 			setz((a.b & data) == 0);
+			cycles += 4;
 		}
 		else {
 			register Word data = mem.getWord(ea);
 
 			mem.setWord(ea, data | a.w);
 			setz((a.w & data) == 0);
+			cycles += 5;
 		}
 	}
 
@@ -1419,21 +1668,44 @@ private:
 			setnz_b(lo(a.w = sp.w));
 		else
 			setnz_w(a.w = sp.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_tsx(Addr ea)
 	{
 		TRACE("TSX");
+
+		if (e)
+			setnz_b(x.b = sp.b);
+		else
+			setnz_w(x.w = sp.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_txa(Addr ea)
 	{
 		TRACE("TXA");
+
+		if (e || p.f_m)
+			setnz_b(a.b = x.b);
+		else
+			setnz_w(a.w = x.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_txs(Addr ea)
 	{
 		TRACE("TXS");
+
+		if (e)
+			sp.w = 0x0100 | x.b;
+		else
+			sp.w = x.w;
+
+		cycles += 2;
 	}
 
 	INLINE void op_txy(Addr ea)
@@ -1444,6 +1716,8 @@ private:
 			setnz_b(lo(y.w = x.w));
 		else
 			setnz_w(y.w = x.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_tya(Addr ea)
@@ -1453,7 +1727,9 @@ private:
 		if (e || p.f_m)
 			setnz_b(a.b = y.b);
 		else
-			setnz_w(a.w = p.f_x ? y.b : y.w);
+			setnz_w(a.w = y.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_tyx(Addr ea)
@@ -1464,6 +1740,8 @@ private:
 			setnz_b(lo(x.w = y.w));
 		else
 			setnz_w(x.w = y.w);
+
+		cycles += 2;
 	}
 
 	INLINE void op_wai(Addr ea)
@@ -1475,6 +1753,8 @@ private:
 		}
 		else
 			interrupted = false;
+
+		cycles += 3;
 	}
 
 	INLINE void op_wdm(Addr ea)
@@ -1482,8 +1762,9 @@ private:
 		TRACE("WDM");
 
 		switch (mem.getByte(ea)) {
-		case 0xff:	exit(0);
+		case 0xff:	stopped = true;  break;
 		}
+		cycles += 3;
 	}
 
 	INLINE void op_xba(Addr ea)
@@ -1492,6 +1773,7 @@ private:
 
 		a.w = swap(a.w);
 		setnz_b(a.b);
+		cycles += 3;
 	}
 
 	INLINE void op_xce(Addr ea)
@@ -1507,6 +1789,7 @@ private:
 			sp.w = 0x0100 | sp.b;
 			dp.w = 0x0000;
 		}
+		cycles += 2;
 	}
 };
 #endif

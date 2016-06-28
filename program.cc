@@ -27,6 +27,8 @@ using namespace std;
 
 #include <string.h>
 
+#include "Windows.h"
+
 #include "mem816.h"
 #include "emu816.h"
 
@@ -148,8 +150,31 @@ int main(int argc, char **argv)
 		return (1);
 	}
 
+	LARGE_INTEGER freq, start, end;
+
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&start);
+
 	setup();
-	for (;;) loop();
+	while (!emu.isStopped ())
+		loop();
+
+	QueryPerformanceCounter(&end);
+
+	double secs = (end.QuadPart - start.QuadPart) / (double) freq.QuadPart;
+
+	double speed = emu.getCycles() / secs;
+
+	cout << endl << "Overall CPU Frequency = ";
+	if (speed < 1000.0)
+		cout << speed << " Hz";
+	else {
+		if ((speed /= 1000.0) < 1000.0)
+			cout << speed << " KHz";
+		else
+			cout << (speed /= 1000.0) << " Mhz";
+	}
+	cout << endl;
 
 	return(0);
 }

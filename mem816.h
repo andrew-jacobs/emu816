@@ -47,7 +47,7 @@ public:
 
 	INLINE Addr getAddr(Addr ea)
 	{
-		return (join(getByte(ea + 0), getWord(ea + 0)));
+		return (join(getByte(ea + 2), getWord(ea + 0)));
 	}
 
 	INLINE void setByte(Addr ea, Byte data)

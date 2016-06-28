@@ -54,6 +54,7 @@ void emu816::reset(bool trace)
 	pc = mem.getWord(0xfffc);
 	p.b = 0x34;
 
+	stopped = false;
 	interrupted = false;
 	
 	this -> trace = trace;
@@ -339,8 +340,6 @@ void emu816::step()
 	case 0xfe:	op_inc(am_absx());	break;
 	case 0xff:	op_sbc(am_alnx());	break;
 	}
-
-	ENDL();
 }
 
 //==============================================================================
@@ -478,6 +477,7 @@ void emu816::dump(const char *mnem, Addr ea)
 // The current PC and opcode byte
 void emu816::show()
 {
+	cout << '{' << toHex(cycles, 4) << "} ";
 	cout << toHex(pbr, 2);
 	cout << ':' << toHex(pc, 4);
 	cout << ' ' << toHex(mem.getByte(join(pbr, pc)), 2);
@@ -550,6 +550,6 @@ void emu816::dump(const char *mnem, Addr ea)
 	cout << ' ' << toHex(mem.getByte(sp.w + 3), 2);
 	cout << ' ' << toHex(mem.getByte(sp.w + 4), 2);
 	cout << " }";
-	cout << " DBR=" << toHex(dbr, 2);
+	cout << " DBR=" << toHex(dbr, 2) << endl;
 }
 #endif
