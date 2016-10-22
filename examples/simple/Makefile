@@ -26,7 +26,7 @@ OBJS		= \
 	simple.obj
 	
 
-all:	simple.s28
+all:	simple.s28 simple.hex
 
 clean:
 	$(RM) *.obj
@@ -39,6 +39,10 @@ clean:
 
 simple.s28: $(OBJS)
 	$(LK65) -bss $$0000-$$7FFF -code $$F000-$$FFFF -s28 -output $@ $(OBJS)
+	
+simple.hex: $(OBJS)
+	$(LK65) -bss $$0000-$$7FFF -code $$F000-$$FFFF -hex -output $@ $(OBJS)
+	java -cp $(DEV65_JAR) uk.co.demon.obelisk.util.Hex2C < simple.hex > simple.txt
 
 #===============================================================================
 # Dependencies

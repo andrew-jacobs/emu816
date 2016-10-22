@@ -3,9 +3,14 @@
 The repository contains the source code for a simple 65C816 emulator for Windows,
 Linux and the embedded ChipKIT platform.
 
-This is the first release of the code and it has only had a limited amount of
+This is the second release of the code and it has only had a limited amount of
 testing. Currently there is no support for decimal arithmetic but the full
 instruction set is supported.
+
+The major change since the last release has been the recoding of all the classes
+to make them static. This was done to increase the execution performance of the
+code. On my development laptop (AMD8 1.8GHz) it now runs at an emulated speed of
+around 225 MHz with full optimization.
 
 There is no I/O at the moment or source of interrupts. Executing a WDM #$FF will
 cause the emulator to exit.

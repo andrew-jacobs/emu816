@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -22,25 +22,23 @@
 #ifndef WDC816_H
 #define WDC816_H
 
-//#define CHIPKIT
-
 #ifdef CHIPKIT
 # define INLINE inline
 #else
 # define INLINE inline
 #endif
 
+// The wdc816 class defines common types for 8-, 16- and 24-bit data values and
+// a set of common functions for manipulating them.
+
 class wdc816
 {
 public:
 	// Common types for memory and register sizes
-	typedef unsigned char Bit;
-	typedef unsigned char Byte;
-	typedef unsigned short Word;
-	typedef unsigned long Addr;
-
-	wdc816 ();
-	~wdc816();
+	typedef unsigned char	Bit;
+	typedef unsigned char	Byte;
+	typedef unsigned short	Word;
+	typedef unsigned long	Addr;
 
 	// Convert a value to a hex string.
 	static char *toHex(unsigned long value, unsigned int digits);
@@ -80,5 +78,9 @@ public:
 	{
 		return ((value >> 8) | (value << 8));
 	}
+
+protected:
+	wdc816();
+	~wdc816();
 };
 #endif

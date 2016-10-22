@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -21,9 +21,11 @@
 
 #include "wdc816.h"
 
+// Never used.
 wdc816::wdc816()
 { }
 
+// Never used.
 wdc816::~wdc816()
 { }
 

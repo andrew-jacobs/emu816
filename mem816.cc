@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -21,22 +21,33 @@
 
 #include "mem816.h"
 
+mem816::Addr	mem816::memMask;
+mem816::Addr	mem816::ramSize;
+
+mem816::Byte   *mem816::pRAM;
+const mem816::Byte *mem816::pROM;
+
 //==============================================================================
 
-// Construct a memory area using dynamic allocation
-mem816::mem816(Addr memMask, Addr ramSize, const Byte *pROM)
-	: memMask(memMask), ramSize(ramSize), pROM(pROM), freeRAM(true)
-{
-	pRAM = new Byte[ramSize];
-}
-
-// Construct a memory area using statically allocated arrays
-mem816::mem816(Addr memMask, Addr ramSize, Byte *pRAM, const Byte *pROM)
-	: memMask(memMask), ramSize(ramSize), pRAM(pRAM), pROM(pROM), freeRAM(false)
+// Never used.
+mem816::mem816()
 { }
 
-// Destory an instance releasing the RAM if allocated.
+// Never used.
 mem816::~mem816()
+{ }
+
+// Sets up the memory areas using a dynamically allocated array
+void mem816::setMemory(Addr memMask, Addr ramSize, const Byte *pROM)
 {
-	if (freeRAM) delete pRAM;
+	setMemory(memMask, ramSize, new Byte[ramSize], pROM);
+}
+
+// Sets up the memory area using pre-allocated array
+void mem816::setMemory(Addr memMask, Addr ramSize, Byte *pRAM, const Byte *pROM)
+{
+	mem816::memMask = memMask;
+	mem816::ramSize = ramSize;
+	mem816::pRAM = pRAM;
+	mem816::pROM = pROM;
 }

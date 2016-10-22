@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -24,15 +24,19 @@
 
 #include "wdc816.h"
 
+// The mem816 class defines a set of standard methods for defining and accessing
+// the emulated memory area.
+
 class mem816 :
 	public wdc816
 {
 public:
-	mem816(Addr memMask, Addr ramSize, const Byte *pROM);
-	mem816(Addr memMask, Addr ramSize, Byte *pRAM, const Byte *pROM);
-	~mem816();
+	// Define the memory areas and sizes
+	static void setMemory (Addr memMask, Addr ramSize, const Byte *pROM);
+	static void setMemory (Addr memMask, Addr ramSize, Byte *pRAM, const Byte *pROM);
 
-	INLINE Byte getByte(Addr ea)
+	// Fetch a byte from memory
+	INLINE static Byte getByte(Addr ea)
 	{
 		if ((ea &= memMask) < ramSize)
 			return (pRAM[ea]);
@@ -40,35 +44,41 @@ public:
 		return (pROM[ea - ramSize]);
 	}
 
-	INLINE Word getWord(Addr ea)
+	// Fetch a word from memory
+	INLINE static Word getWord(Addr ea)
 	{
-		return (join(getByte(ea + 0), getByte(ea + 1)));
+			return (join(getByte(ea + 0), getByte(ea + 1)));
 	}
 
-	INLINE Addr getAddr(Addr ea)
+	// Fetch a long address from memory
+	INLINE static Addr getAddr(Addr ea)
 	{
 		return (join(getByte(ea + 2), getWord(ea + 0)));
 	}
 
-	INLINE void setByte(Addr ea, Byte data)
+	// Write a byte to memory
+	INLINE static void setByte(Addr ea, Byte data)
 	{
 		if ((ea &= memMask) < ramSize)
 			pRAM[ea] = data;
 	}
 
-	INLINE void setWord(Addr ea, Word data)
+	// Write a word to memory
+	INLINE static void setWord(Addr ea, Word data)
 	{
-		setByte(ea + 0, lo(data));
-		setByte(ea + 1, hi(data));
+			setByte(ea + 0, lo(data));
+			setByte(ea + 1, hi(data));
 	}
 
+protected:
+	mem816();
+	~mem816();
+
 private:
-	const Addr	memMask;
-	const Addr	ramSize;
+	static Addr			memMask;		// The address mask pattern
+	static Addr			ramSize;		// The amount of RAM
 
-	Byte	   *pRAM;
-	const Byte *pROM;
-
-	const bool	freeRAM;
+	static Byte		  *pRAM;			// Base of RAM memory array
+	static const Byte *pROM;			// Base of ROM memory array
 };
 #endif

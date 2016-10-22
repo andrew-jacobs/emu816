@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 
-#if 1
+#if 0
 # define TRACE(MNEM)	{ if (trace) dump(MNEM, ea); }
 # define BYTES(N)		{ if (trace) bytes(N); pc += N; }
 # define SHOWPC()		{ if (trace) show(); }
@@ -42,28 +42,26 @@
 # define ENDL()
 #endif
 
+// Defines the WDC 65C816 emulator. 
 class emu816 :
-	public wdc816
+	public mem816
 {
 public:
-	emu816(mem816 &mem);
-	~emu816();
+	static void reset(bool trace);
+	static void step();
 
-	void reset(bool trace);
-	void step();
-
-	INLINE unsigned long getCycles() const
+	INLINE static unsigned long getCycles()
 	{
 		return (cycles);
 	}
 
-	INLINE bool isStopped() const
+	INLINE static bool isStopped()
 	{
 		return (stopped);
 	}
 
 private:
-	union {
+	static union FLAGS {
 		struct {
 			Bit				f_c : 1;
 			Bit				f_z : 1;
@@ -77,31 +75,32 @@ private:
 		Byte			b;
 	}   p;
 
-	Bit				e;
+	static Bit		e;
 
-	union {
+	static union REGS {
 		Byte			b;
 		Word			w;
 	}   a, x, y, sp, dp;
 
-	Word			pc;
-	Byte			pbr, dbr;
+	static Word		pc;
+	static Byte		pbr, dbr;
 
-	mem816		   &mem;
+	static bool		stopped;
+	static bool		interrupted;
+	static unsigned long cycles;
+	static bool		trace;
 
-	bool			stopped;
-	bool			interrupted;
-	unsigned long	cycles;
-	bool			trace;
+	emu816();
+	~emu816();
 
-	void show();
-	void bytes(unsigned int);
-	void dump(const char *, Addr);
+	static void show();
+	static void bytes(unsigned int);
+	static void dump(const char *, Addr);
 
 	// Push a byte on the stack
-	INLINE void pushByte(Byte value)
+	INLINE static void pushByte(Byte value)
 	{
-		mem.setByte(sp.w, value);
+		setByte(sp.w, value);
 
 		if (e)
 			--sp.b;
@@ -110,25 +109,25 @@ private:
 	}
 
 	// Push a word on the stack
-	INLINE void pushWord(Word value)
+	INLINE static void pushWord(Word value)
 	{
 		pushByte(hi(value));
 		pushByte(lo(value));
 	}
 
 	// Pull a byte from the stack
-	INLINE Byte pullByte()
+	INLINE static Byte pullByte()
 	{
 		if (e)
 			++sp.b;
 		else
 			++sp.w;
 
-		return (mem.getByte(sp.w));
+		return (getByte(sp.w));
 	}
 
 	// Pull a word from the stack
-	INLINE Word pullWord()
+	INLINE static Word pullWord()
 	{
 		register Byte	l = pullByte();
 		register Byte	h = pullByte();
@@ -137,9 +136,9 @@ private:
 	}
 
 	// Absolute - a
-	INLINE Addr am_absl()
+	INLINE static Addr am_absl()
 	{
-		register Addr	ea = join (dbr, mem.getWord(bank(pbr) | pc));
+		register Addr	ea = join (dbr, getWord(bank(pbr) | pc));
 
 		BYTES(2);
 		cycles += 2;
@@ -147,9 +146,9 @@ private:
 	}
 
 	// Absolute Indexed X - a,X
-	INLINE Addr am_absx()
+	INLINE static Addr am_absx()
 	{
-		register Addr	ea = join(dbr, mem.getWord(bank(pbr) | pc)) + x.w;
+		register Addr	ea = join(dbr, getWord(bank(pbr) | pc)) + x.w;
 
 		BYTES(2);
 		cycles += 2;
@@ -157,9 +156,9 @@ private:
 	}
 
 	// Absolute Indexed Y - a,Y
-	INLINE Addr am_absy()
+	INLINE static Addr am_absy()
 	{
-		register Addr	ea = join(dbr, mem.getWord(bank(pbr) | pc)) + y.w;
+		register Addr	ea = join(dbr, getWord(bank(pbr) | pc)) + y.w;
 
 		BYTES(2);
 		cycles += 2;
@@ -167,29 +166,29 @@ private:
 	}
 
 	// Absolute Indirect - (a)
-	INLINE Addr am_absi()
+	INLINE static Addr am_absi()
 	{
-		register Addr ia = join(0, mem.getWord(bank(pbr) | pc));
+		register Addr ia = join(0, getWord(bank(pbr) | pc));
 
 		BYTES(2);
 		cycles += 4;
-		return (join(0, mem.getWord(ia)));
+		return (join(0, getWord(ia)));
 	}
 
 	// Absolute Indexed Indirect - (a,X)
-	INLINE Addr am_abxi()
+	INLINE static Addr am_abxi()
 	{
-		register Addr ia = join(pbr, mem.getWord(bank(pbr) | pc)) + x.w;
+		register Addr ia = join(pbr, getWord(bank(pbr) | pc)) + x.w;
 
 		BYTES(2);
 		cycles += 4;
-		return (join(pbr, mem.getWord(ia)));
+		return (join(pbr, getWord(ia)));
 	}
 
 	// Absolute Long - >a
-	INLINE Addr am_alng()
+	INLINE static Addr am_alng()
 	{
-		Addr ea = mem.getAddr(bank(pbr) | pc);
+		Addr ea = getAddr(bank(pbr) | pc);
 
 		BYTES(3);
 		cycles += 3;
@@ -197,9 +196,9 @@ private:
 	}
 
 	// Absolute Long Indexed - >a,X
-	INLINE Addr am_alnx()
+	INLINE static Addr am_alnx()
 	{
-		register Addr ea = mem.getAddr(bank(pbr) | pc) + x.w;
+		register Addr ea = getAddr(bank(pbr) | pc) + x.w;
 
 		BYTES(3);
 		cycles += 3;
@@ -207,19 +206,19 @@ private:
 	}
 
 	// Absolute Indirect Long - [a]
-	INLINE Addr am_abil()
+	INLINE static Addr am_abil()
 	{
-		register Addr ia = bank(0) | mem.getWord(bank(pbr) | pc);
+		register Addr ia = bank(0) | getWord(bank(pbr) | pc);
 
 		BYTES(2);
 		cycles += 5;
-		return (mem.getAddr(ia));
+		return (getAddr(ia));
 	}
 
 	// Direct Page - d
-	INLINE Addr am_dpag()
+	INLINE static Addr am_dpag()
 	{
-		Byte offset = mem.getByte(bank(pbr) | pc);
+		Byte offset = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 1;
@@ -227,9 +226,9 @@ private:
 	}
 
 	// Direct Page Indexed X - d,X
-	INLINE Addr am_dpgx()
+	INLINE static Addr am_dpgx()
 	{
-		Byte offset = mem.getByte(bank(pbr) | pc) + x.b;
+		Byte offset = getByte(bank(pbr) | pc) + x.b;
 
 		BYTES(1);
 		cycles += 1;
@@ -237,9 +236,9 @@ private:
 	}
 
 	// Direct Page Indexed Y - d,Y
-	INLINE Addr am_dpgy()
+	INLINE static Addr am_dpgy()
 	{
-		Byte offset = mem.getByte(bank(pbr) | pc) + y.b;
+		Byte offset = getByte(bank(pbr) | pc) + y.b;
 
 		BYTES(1);
 		cycles += 1;
@@ -247,71 +246,71 @@ private:
 	}
 
 	// Direct Page Indirect - (d)
-	INLINE Addr am_dpgi()
+	INLINE static Addr am_dpgi()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 3;
-		return (bank(dbr) | mem.getWord(bank(0) | (Word)(dp.w + disp)));
+		return (bank(dbr) | getWord(bank(0) | (Word)(dp.w + disp)));
 	}
 
 	// Direct Page Indexed Indirect - (d,x)
-	INLINE Addr am_dpix()
+	INLINE static Addr am_dpix()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 3;
-		return (bank(dbr) | mem.getWord(bank(0) | (Word)(dp.w + disp + x.w)));
+		return (bank(dbr) | getWord(bank(0) | (Word)(dp.w + disp + x.w)));
 	}
 
 	// Direct Page Indirect Indexed - (d),Y
-	INLINE Addr am_dpiy()
+	INLINE static Addr am_dpiy()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 3;
-		return (bank(dbr) | mem.getWord(bank(0) | (dp.w + disp)) + y.w);
+		return (bank(dbr) | getWord(bank(0) | (dp.w + disp)) + y.w);
 	}
 
 	// Direct Page Indirect Long - [d]
-	INLINE Addr am_dpil()
+	INLINE static Addr am_dpil()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 4;
-		return (mem.getAddr(bank(0) | (Word)(dp.w + disp)));
+		return (getAddr(bank(0) | (Word)(dp.w + disp)));
 	}
 
 	// Direct Page Indirect Long Indexed - [d],Y
-	INLINE Addr am_dily()
+	INLINE static Addr am_dily()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 4;
-		return (mem.getAddr(bank(0) | (Word)(dp.w + disp)) + y.w);
+		return (getAddr(bank(0) | (Word)(dp.w + disp)) + y.w);
 	}
 
 	// Implied/Stack
-	INLINE Addr am_impl()
+	INLINE static Addr am_impl()
 	{
 		BYTES(0);
 		return (0);
 	}
 
 	// Accumulator
-	INLINE Addr am_acc()
+	INLINE static Addr am_acc()
 	{
 		BYTES(0);
 		return (0);
 	}
 
 	// Immediate Byte
-	INLINE Addr am_immb()
+	INLINE static Addr am_immb()
 	{
 		Addr ea = bank(pbr) | pc;
 
@@ -321,7 +320,7 @@ private:
 	}
 
 	// Immediate Word
-	INLINE Addr am_immw()
+	INLINE static Addr am_immw()
 	{
 		Addr ea = bank(pbr) | pc;
 
@@ -331,7 +330,7 @@ private:
 	}
 
 	// Immediate based on size of A/M
-	INLINE Addr am_immm()
+	INLINE static Addr am_immm()
 	{
 		Addr ea = bank(pbr) | pc;
 		unsigned int size = (e || p.f_m) ? 1 : 2;
@@ -342,7 +341,7 @@ private:
 	}
 
 	// Immediate based on size of X/Y
-	INLINE Addr am_immx()
+	INLINE static Addr am_immx()
 	{
 		Addr ea = bank(pbr) | pc;
 		unsigned int size = (e || p.f_x) ? 1 : 2;
@@ -353,9 +352,9 @@ private:
 	}
 
 	// Long Relative - d
-	INLINE Addr am_lrel()
+	INLINE static Addr am_lrel()
 	{
-		Word disp = mem.getWord(bank(pbr) | pc);
+		Word disp = getWord(bank(pbr) | pc);
 
 		BYTES(2);
 		cycles += 2;
@@ -363,9 +362,9 @@ private:
 	}
 
 	// Relative - d
-	INLINE Addr am_rela()
+	INLINE static Addr am_rela()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 1;
@@ -373,9 +372,9 @@ private:
 	}
 
 	// Stack Relative - d,S
-	INLINE Addr am_srel()
+	INLINE static Addr am_srel()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 
 		BYTES(1);
 		cycles += 1;
@@ -387,78 +386,78 @@ private:
 	}
 
 	// Stack Relative Indirect Indexed Y - (d,S),Y
-	INLINE Addr am_sriy()
+	INLINE static Addr am_sriy()
 	{
-		Byte disp = mem.getByte(bank(pbr) | pc);
+		Byte disp = getByte(bank(pbr) | pc);
 		register Word ia;
 
 		BYTES(1);
 		cycles += 3;
 
 		if (e)
-			ia = mem.getWord(join(sp.b + disp, hi(sp.w)));
+			ia = getWord(join(sp.b + disp, hi(sp.w)));
 		else
-			ia = mem.getWord(bank(0) | (sp.w + disp));
+			ia = getWord(bank(0) | (sp.w + disp));
 
 		return (bank(dbr) | (Word)(ia + y.w));
 	}
 
 	// Set the Negative flag
-	INLINE void setn(unsigned int flag)
+	INLINE static void setn(unsigned int flag)
 	{
 		p.f_n = flag ? 1 : 0;
 	}
 
 	// Set the Overflow flag
-	INLINE void setv(unsigned int flag)
+	INLINE static void setv(unsigned int flag)
 	{
 		p.f_v = flag ? 1 : 0;
 	}
 
 	// Set the decimal flag
-	INLINE void setd(unsigned int flag)
+	INLINE static void setd(unsigned int flag)
 	{
 		p.f_d = flag ? 1 : 0;
 	}
 
 	// Set the Interrupt Disable flag
-	INLINE void seti(unsigned int flag)
+	INLINE static void seti(unsigned int flag)
 	{
 		p.f_i = flag ? 1 : 0;
 	}
 
 	// Set the Zero flag
-	INLINE void setz(unsigned int flag)
+	INLINE static void setz(unsigned int flag)
 	{
 		p.f_z = flag ? 1 : 0;
 	}
 
 	// Set the Carry flag
-	INLINE void setc(unsigned int flag)
+	INLINE static void setc(unsigned int flag)
 	{
 		p.f_c = flag ? 1 : 0;
 	}
 
 	// Set the Negative and Zero flags from a byte value
-	INLINE void setnz_b(Byte value)
+	INLINE static void setnz_b(Byte value)
 	{
 		setn(value & 0x80);
 		setz(value == 0);
 	}
 
 	// Set the Negative and Zero flags from a word value
-	INLINE void setnz_w(Word value)
+	INLINE static void setnz_w(Word value)
 	{
 		setn(value & 0x8000);
 		setz(value == 0);
 	}
 
-	INLINE void op_adc(Addr ea)
+	INLINE static void op_adc(Addr ea)
 	{
 		TRACE("ADC");
 
 		if (e || p.f_m) {
-			Byte	data = mem.getByte(ea);
+			Byte	data = getByte(ea);
 			Word	temp = a.b + data + p.f_c;
 
 			setc(temp & 0x100);
@@ -467,7 +466,7 @@ private:
 			cycles += 2;
 		}
 		else {
-			Word	data = mem.getWord(ea);
+			Word	data = getWord(ea);
 			int		temp = a.w + data + p.f_c;
 
 			setc(temp & 0x100);
@@ -477,60 +476,60 @@ private:
 		}
 	}
 
-	INLINE void op_and(Addr ea)
+	INLINE static void op_and(Addr ea)
 	{
 		TRACE("AND");
 
 		if (e || p.f_m) {
-			setnz_b(a.b &= mem.getByte(ea));
+			setnz_b(a.b &= getByte(ea));
 			cycles += 2;
 		}
 		else {
-			setnz_w(a.w &= mem.getWord(ea));
+			setnz_w(a.w &= getWord(ea));
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_asl(Addr ea)
+	INLINE static void op_asl(Addr ea)
 	{
 		TRACE("ASL");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
 			setc(data & 0x80);
 			setnz_b(data <<= 1);
-			mem.setByte(ea, data);
+			setByte(ea, data);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
 			setc(data & 0x8000);
 			setnz_w(data <<= 1);
-			mem.setWord(ea, data);
+			setWord(ea, data);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_asla(Addr ea)
+	INLINE static void op_asla(Addr ea)
 	{
 		TRACE("ASL");
 
 		if (e || p.f_m) {
 			setc(a.b & 0x80);
 			setnz_b(a.b <<= 1);
-			mem.setByte(ea, a.b);
+			setByte(ea, a.b);
 		}
 		else {
 			setc(a.w & 0x8000);
 			setnz_w(a.w <<= 1);
-			mem.setWord(ea, a.w);
+			setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
 
-	INLINE void op_bcc(Addr ea)
+	INLINE static void op_bcc(Addr ea)
 	{
 		TRACE("BCC");
 
@@ -543,7 +542,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_bcs(Addr ea)
+	INLINE static void op_bcs(Addr ea)
 	{
 		TRACE("BCS");
 
@@ -556,7 +555,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_beq(Addr ea)
+	INLINE static void op_beq(Addr ea)
 	{
 		TRACE("BEQ");
 
@@ -569,12 +568,12 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_bit(Addr ea)
+	INLINE static void op_bit(Addr ea)
 	{
 		TRACE("BIT");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
 			setz((a.b & data) == 0);
 			setn(data & 0x80);
@@ -582,7 +581,7 @@ private:
 			cycles += 2;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
 			setz((a.w & data) == 0);
 			setn(data & 0x8000);
@@ -592,24 +591,24 @@ private:
 		}
 	}
 
-	INLINE void op_biti(Addr ea)
+	INLINE static void op_biti(Addr ea)
 	{
 		TRACE("BIT");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
 			setz((a.b & data) == 0);
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
 			setz((a.w & data) == 0);
 		}
 		cycles += 2;
 	}
 
-	INLINE void op_bmi(Addr ea)
+	INLINE static void op_bmi(Addr ea)
 	{
 		TRACE("BMI");
 
@@ -622,7 +621,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_bne(Addr ea)
+	INLINE static void op_bne(Addr ea)
 	{
 		TRACE("BNE");
 
@@ -635,7 +634,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_bpl(Addr ea)
+	INLINE static void op_bpl(Addr ea)
 	{
 		TRACE("BPL");
 
@@ -648,7 +647,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_bra(Addr ea)
+	INLINE static void op_bra(Addr ea)
 	{
 		TRACE("BRA");
 
@@ -657,7 +656,7 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_brk(Addr ea)
+	INLINE static void op_brk(Addr ea)
 	{
 		TRACE("BRK");
 
@@ -669,7 +668,7 @@ private:
 			p.f_d = 0;
 			pbr = 0;
 
-			pc = mem.getWord(0xfffe);
+			pc = getWord(0xfffe);
 			cycles += 7;
 		}
 		else {
@@ -681,12 +680,12 @@ private:
 			p.f_d = 0;
 			pbr = 0;
 
-			pc = mem.getWord(0xffe6);
+			pc = getWord(0xffe6);
 			cycles += 8;
 		}
 	}
 
-	INLINE void op_brl(Addr ea)
+	INLINE static void op_brl(Addr ea)
 	{
 		TRACE("BRL");
 
@@ -694,7 +693,7 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_bvc(Addr ea)
+	INLINE static void op_bvc(Addr ea)
 	{
 		TRACE("BVC");
 
@@ -707,7 +706,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_bvs(Addr ea)
+	INLINE static void op_bvs(Addr ea)
 	{
 		TRACE("BVS");
 
@@ -720,7 +719,7 @@ private:
 			cycles += 2;
 	}
 
-	INLINE void op_clc(Addr ea)
+	INLINE static void op_clc(Addr ea)
 	{
 		TRACE("CLC");
 
@@ -728,7 +727,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_cld(Addr ea)
+	INLINE static void op_cld(Addr ea)
 	{
 		TRACE("CLD")
 
@@ -736,7 +735,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_cli(Addr ea)
+	INLINE static void op_cli(Addr ea)
 	{
 		TRACE("CLI")
 
@@ -744,7 +743,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_clv(Addr ea)
+	INLINE static void op_clv(Addr ea)
 	{
 		TRACE("CLD")
 
@@ -752,12 +751,12 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_cmp(Addr ea)
+	INLINE static void op_cmp(Addr ea)
 	{
 		TRACE("CMP");
 
 		if (e || p.f_m) {
-			Byte	data = mem.getByte(ea);
+			Byte	data = getByte(ea);
 			Word	temp = a.b - data;
 
 			setc(temp & 0x100);
@@ -765,7 +764,7 @@ private:
 			cycles += 2;
 		}
 		else {
-			Word	data = mem.getWord(ea);
+			Word	data = getWord(ea);
 			Addr	temp = a.w - data;
 
 			setc(temp & 0x10000L);
@@ -774,7 +773,7 @@ private:
 		}
 	}
 
-	INLINE void op_cop(Addr ea)
+	INLINE static void op_cop(Addr ea)
 	{
 		TRACE("COP");
 
@@ -786,7 +785,7 @@ private:
 			p.f_d = 0;
 			pbr = 0;
 
-			pc = mem.getWord(0xfff4);
+			pc = getWord(0xfff4);
 			cycles += 7;
 		}
 		else {
@@ -798,68 +797,68 @@ private:
 			p.f_d = 0;
 			pbr = 0;
 
-			pc = mem.getWord(0xffe4);
+			pc = getWord(0xffe4);
 			cycles += 8;
 		}
 	}
 
-	INLINE void op_cpx(Addr ea)
+	INLINE static void op_cpx(Addr ea)
 	{
 		TRACE("CPX");
 
 		if (e || p.f_x) {
-			Byte	data = mem.getByte(ea);
+			Byte	data = getByte(ea);
 			setnz_b(x.b - data);
 			setc(x.b >= data);
 			cycles += 2;
 		}
 		else {
-			Word	data = mem.getWord(ea);
+			Word	data = getWord(ea);
 			setnz_w(x.w - data);
 			setc(x.w >= data);
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_cpy(Addr ea)
+	INLINE static void op_cpy(Addr ea)
 	{
 		TRACE("CPY");
 
 		if (e || p.f_x) {
-			Byte	data = mem.getByte(ea);
+			Byte	data = getByte(ea);
 			setnz_b(y.b - data);
 			setc(y.b >= data);
 			cycles += 2;
 		}
 		else {
-			Word	data = mem.getWord(ea);
+			Word	data = getWord(ea);
 			setnz_w(y.w - data);
 			setc(y.w >= data);
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_dec(Addr ea)
+	INLINE static void op_dec(Addr ea)
 	{
 		TRACE("DEC");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
-			mem.setByte(ea, ++data);
+			setByte(ea, ++data);
 			setnz_b(data);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
-			mem.setWord(ea, ++data);
+			setWord(ea, ++data);
 			setnz_w(data);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_deca(Addr ea)
+	INLINE static void op_deca(Addr ea)
 	{
 		TRACE("DEC");
 
@@ -871,7 +870,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_dex(Addr ea)
+	INLINE static void op_dex(Addr ea)
 	{
 		TRACE("DEX");
 
@@ -883,7 +882,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_dey(Addr ea)
+	INLINE static void op_dey(Addr ea)
 	{
 		TRACE("DEY");
 
@@ -895,41 +894,41 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_eor(Addr ea)
+	INLINE static void op_eor(Addr ea)
 	{
 		TRACE("EOR");
 
 		if (e || p.f_m) {
-			setnz_b(a.b ^= mem.getByte(ea));
+			setnz_b(a.b ^= getByte(ea));
 			cycles += 2;
 		}
 		else {
-			setnz_w(a.w ^= mem.getWord(ea));
+			setnz_w(a.w ^= getWord(ea));
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_inc(Addr ea)
+	INLINE static void op_inc(Addr ea)
 	{
 		TRACE("INC");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
-			mem.setByte(ea, ++data);
+			setByte(ea, ++data);
 			setnz_b(data);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
-			mem.setWord(ea, ++data);
+			setWord(ea, ++data);
 			setnz_w(data);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_inca(Addr ea)
+	INLINE static void op_inca(Addr ea)
 	{
 		TRACE("INC");
 
@@ -941,7 +940,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_inx(Addr ea)
+	INLINE static void op_inx(Addr ea)
 	{
 		TRACE("INX");
 
@@ -953,7 +952,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_iny(Addr ea)
+	INLINE static void op_iny(Addr ea)
 	{
 		TRACE("INY");
 
@@ -965,7 +964,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_jmp(Addr ea)
+	INLINE static void op_jmp(Addr ea)
 	{
 		TRACE("JMP");
 
@@ -974,7 +973,7 @@ private:
 		cycles += 1;
 	}
 
-	INLINE void op_jsl(Addr ea)
+	INLINE static void op_jsl(Addr ea)
 	{
 		TRACE("JSL");
 
@@ -986,7 +985,7 @@ private:
 		cycles += 5;
 	}
 
-	INLINE void op_jsr(Addr ea)
+	INLINE static void op_jsr(Addr ea)
 	{
 		TRACE("JSR");
 
@@ -996,149 +995,149 @@ private:
 		cycles += 4;
 	}
 
-	INLINE void op_lda(Addr ea)
+	INLINE static void op_lda(Addr ea)
 	{
 		TRACE("LDA");
 
 		if (e || p.f_m) {
-			setnz_b(a.b = mem.getByte(ea));
+			setnz_b(a.b = getByte(ea));
 			cycles += 2;
 		}
 		else {
-			setnz_w(a.w = mem.getWord(ea));
+			setnz_w(a.w = getWord(ea));
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_ldx(Addr ea)
+	INLINE static void op_ldx(Addr ea)
 	{
 		TRACE("LDX");
 
 		if (e || p.f_x) {
-			setnz_b(lo(x.w = mem.getByte(ea)));
+			setnz_b(lo(x.w = getByte(ea)));
 			cycles += 2;
 		}
 		else {
-			setnz_w(x.w = mem.getWord(ea));
+			setnz_w(x.w = getWord(ea));
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_ldy(Addr ea)
+	INLINE static void op_ldy(Addr ea)
 	{
 		TRACE("LDY");
 
 		if (e || p.f_x) {
-			setnz_b(lo(y.w = mem.getByte(ea)));
+			setnz_b(lo(y.w = getByte(ea)));
 			cycles += 2;
 		}
 		else {
-			setnz_w(y.w = mem.getWord(ea));
+			setnz_w(y.w = getWord(ea));
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_lsr(Addr ea)
+	INLINE static void op_lsr(Addr ea)
 	{
 		TRACE("LSR");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
 			setc(data & 0x01);
 			setnz_b(data >>= 1);
-			mem.setByte(ea, data);
+			setByte(ea, data);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
 			setc(data & 0x0001);
 			setnz_w(data >>= 1);
-			mem.setWord(ea, data);
+			setWord(ea, data);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_lsra(Addr ea)
+	INLINE static void op_lsra(Addr ea)
 	{
 		TRACE("LSR");
 
 		if (e || p.f_m) {
 			setc(a.b & 0x01);
 			setnz_b(a.b >>= 1);
-			mem.setByte(ea, a.b);
+			setByte(ea, a.b);
 		}
 		else {
 			setc(a.w & 0x0001);
 			setnz_w(a.w >>= 1);
-			mem.setWord(ea, a.w);
+			setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
 
-	INLINE void op_mvn(Addr ea)
+	INLINE static void op_mvn(Addr ea)
 	{
 		TRACE("MVN");
 
-		Byte src = mem.getByte(ea + 0);
-		Byte dst = mem.getByte(ea + 1);
+		Byte src = getByte(ea + 0);
+		Byte dst = getByte(ea + 1);
 
-		mem.setByte(join(dbr = dst, y.w++), mem.getByte(join(src, x.w++)));
+		setByte(join(dbr = dst, y.w++), getByte(join(src, x.w++)));
 		if (--a.w != 0xffff) pc -= 3;
 		cycles += 7;
 	}
 
-	INLINE void op_mvp(Addr ea)
+	INLINE static void op_mvp(Addr ea)
 	{
 		TRACE("MVP");
 
-		Byte src = mem.getByte(ea + 0);
-		Byte dst = mem.getByte(ea + 1);
+		Byte src = getByte(ea + 0);
+		Byte dst = getByte(ea + 1);
 
-		mem.setByte(join(dbr = dst, y.w--), mem.getByte(join(src, x.w--)));
+		setByte(join(dbr = dst, y.w--), getByte(join(src, x.w--)));
 		if (--a.w != 0xffff) pc -= 3;
 		cycles += 7;
 	}
 
-	INLINE void op_nop(Addr ea)
+	INLINE static void op_nop(Addr ea)
 	{
 		TRACE("NOP");
 
 		cycles += 2;
 	}
 
-	INLINE void op_ora(Addr ea)
+	INLINE static void op_ora(Addr ea)
 	{
 		TRACE("ORA");
 
 		if (e || p.f_m) {
-			setnz_b(a.b |= mem.getByte(ea));
+			setnz_b(a.b |= getByte(ea));
 			cycles += 2;
 		}
 		else {
-			setnz_w(a.w |= mem.getWord(ea));
+			setnz_w(a.w |= getWord(ea));
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_pea(Addr ea)
+	INLINE static void op_pea(Addr ea)
 	{
 		TRACE("PEA");
 
-		pushWord(mem.getWord(ea));
+		pushWord(getWord(ea));
 		cycles += 5;
 	}
 
-	INLINE void op_pei(Addr ea)
+	INLINE static void op_pei(Addr ea)
 	{
 		TRACE("PEI");
 
-		pushWord(mem.getWord(ea));
+		pushWord(getWord(ea));
 		cycles += 6;
 	}
 
-	INLINE void op_per(Addr ea)
+	INLINE static void op_per(Addr ea)
 	{
 		TRACE("PER");
 
@@ -1146,7 +1145,7 @@ private:
 		cycles += 6;
 	}
 
-	INLINE void op_pha(Addr ea)
+	INLINE static void op_pha(Addr ea)
 	{
 		TRACE("PHA");
 
@@ -1160,7 +1159,7 @@ private:
 		}
 	}
 
-	INLINE void op_phb(Addr ea)
+	INLINE static void op_phb(Addr ea)
 	{
 		TRACE("PHB");
 
@@ -1168,7 +1167,7 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_phd(Addr ea)
+	INLINE static void op_phd(Addr ea)
 	{
 		TRACE("PHD");
 
@@ -1176,7 +1175,7 @@ private:
 		cycles += 4;
 	}
 
-	INLINE void op_phk(Addr ea)
+	INLINE static void op_phk(Addr ea)
 	{
 		TRACE("PHK");
 
@@ -1184,7 +1183,7 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_php(Addr ea)
+	INLINE static void op_php(Addr ea)
 	{
 		TRACE("PHP");
 
@@ -1192,7 +1191,7 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_phx(Addr ea)
+	INLINE static void op_phx(Addr ea)
 	{
 		TRACE("PHX");
 
@@ -1206,7 +1205,7 @@ private:
 		}
 	}
 
-	INLINE void op_phy(Addr ea)
+	INLINE static void op_phy(Addr ea)
 	{
 		TRACE("PHY");
 
@@ -1220,7 +1219,7 @@ private:
 		}
 	}
 
-	INLINE void op_pla(Addr ea)
+	INLINE static void op_pla(Addr ea)
 	{
 		TRACE("PLA");
 
@@ -1234,7 +1233,7 @@ private:
 		}
 	}
 
-	INLINE void op_plb(Addr ea)
+	INLINE static void op_plb(Addr ea)
 	{
 		TRACE("PLB");
 
@@ -1242,7 +1241,7 @@ private:
 		cycles += 4;
 	}
 
-	INLINE void op_pld(Addr ea)
+	INLINE static void op_pld(Addr ea)
 	{
 		TRACE("PLD");
 
@@ -1250,7 +1249,7 @@ private:
 		cycles += 5;
 	}
 
-	INLINE void op_plk(Addr ea)
+	INLINE static void op_plk(Addr ea)
 	{
 		TRACE("PLK");
 
@@ -1258,7 +1257,7 @@ private:
 		cycles += 4;
 	}
 
-	INLINE void op_plp(Addr ea)
+	INLINE static void op_plp(Addr ea)
 	{
 		TRACE("PLP");
 
@@ -1275,7 +1274,7 @@ private:
 		cycles += 4;
 	}
 
-	INLINE void op_plx(Addr ea)
+	INLINE static void op_plx(Addr ea)
 	{
 		TRACE("PLX");
 
@@ -1289,7 +1288,7 @@ private:
 		}
 	}
 
-	INLINE void op_ply(Addr ea)
+	INLINE static void op_ply(Addr ea)
 	{
 		TRACE("PLY");
 
@@ -1303,40 +1302,40 @@ private:
 		}
 	}
 
-	INLINE void op_rep(Addr ea)
+	INLINE static void op_rep(Addr ea)
 	{
 		TRACE("REP");
 
-		p.b &= ~mem.getByte(ea);
+		p.b &= ~getByte(ea);
 		if (e) p.f_m = p.f_x = 1;
 		cycles += 3;
 	}
 
-	INLINE void op_rol(Addr ea)
+	INLINE static void op_rol(Addr ea)
 	{
 		TRACE("ROL");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 			register Byte carry = p.f_c ? 0x01 : 0x00;
 
 			setc(data & 0x80);
 			setnz_b(data = (data << 1) | carry);
-			mem.setByte(ea, data);
+			setByte(ea, data);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 			register Word carry = p.f_c ? 0x0001 : 0x0000;
 
 			setc(data & 0x8000);
 			setnz_w(data = (data << 1) | carry);
-			mem.setWord(ea, data);
+			setWord(ea, data);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_rola(Addr ea)
+	INLINE static void op_rola(Addr ea)
 	{
 		TRACE("ROL");
 
@@ -1345,43 +1344,43 @@ private:
 
 			setc(a.b & 0x80);
 			setnz_b(a.b = (a.b << 1) | carry);
-			mem.setByte(ea, a.b);
+			setByte(ea, a.b);
 		}
 		else {
 			register Word carry = p.f_c ? 0x0001 : 0x0000;
 
 			setc(a.w & 0x8000);
 			setnz_w(a.w = (a.w << 1) | carry);
-			mem.setWord(ea, a.w);
+			setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
 
-	INLINE void op_ror(Addr ea)
+	INLINE static void op_ror(Addr ea)
 	{
 		TRACE("ROR");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 			register Byte carry = p.f_c ? 0x80 : 0x00;
 
 			setc(data & 0x80);
 			setnz_b(data = (data >> 1) | carry);
-			mem.setByte(ea, data);
+			setByte(ea, data);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 			register Word carry = p.f_c ? 0x8000 : 0x0000;
 
 			setc(data & 0x8000);
 			setnz_w(data = (data >> 1) | carry);
-			mem.setWord(ea, data);
+			setWord(ea, data);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_rora(Addr ea)
+	INLINE static void op_rora(Addr ea)
 	{
 		TRACE("ROR");
 
@@ -1390,19 +1389,19 @@ private:
 
 			setc(a.b & 0x80);
 			setnz_b(a.b = (a.b >> 1) | carry);
-			mem.setByte(ea, a.b);
+			setByte(ea, a.b);
 		}
 		else {
 			register Word carry = p.f_c ? 0x8000 : 0x0000;
 
 			setc(a.w & 0x8000);
 			setnz_w(a.w = (a.w >> 1) | carry);
-			mem.setWord(ea, a.w);
+			setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
 
-	INLINE void op_rti(Addr ea)
+	INLINE static void op_rti(Addr ea)
 	{
 		TRACE("RTI");
 
@@ -1420,7 +1419,7 @@ private:
 		p.f_i = 0;
 	}
 
-	INLINE void op_rtl(Addr ea)
+	INLINE static void op_rtl(Addr ea)
 	{
 		TRACE("RTL");
 
@@ -1429,7 +1428,7 @@ private:
 		cycles += 6;
 	}
 
-	INLINE void op_rts(Addr ea)
+	INLINE static void op_rts(Addr ea)
 	{
 		TRACE("RTS");
 
@@ -1437,12 +1436,12 @@ private:
 		cycles += 6;
 	}
 
-	INLINE void op_sbc(Addr ea)
+	INLINE static void op_sbc(Addr ea)
 	{
 		TRACE("SBC");
 
 		if (e || p.f_m) {
-			Byte	data = ~mem.getByte(ea);
+			Byte	data = ~getByte(ea);
 			Word	temp = a.b + data + p.f_c;
 
 			setc(temp & 0x100);
@@ -1451,7 +1450,7 @@ private:
 			cycles += 2;
 		}
 		else {
-			Word	data = ~mem.getWord(ea);
+			Word	data = ~getWord(ea);
 			int		temp = a.w + data + p.f_c;
 
 			setc(temp & 0x100);
@@ -1461,7 +1460,7 @@ private:
 		}
 	}
 
-	INLINE void op_sec(Addr ea)
+	INLINE static void op_sec(Addr ea)
 	{
 		TRACE("SEC");
 
@@ -1469,7 +1468,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_sed(Addr ea)
+	INLINE static void op_sed(Addr ea)
 	{
 		TRACE("SED");
 
@@ -1477,7 +1476,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_sei(Addr ea)
+	INLINE static void op_sei(Addr ea)
 	{
 		TRACE("SEI");
 
@@ -1485,11 +1484,11 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_sep(Addr ea)
+	INLINE static void op_sep(Addr ea)
 	{
 		TRACE("SEP");
 
-		p.b |= mem.getByte(ea);
+		p.b |= getByte(ea);
 		if (e) p.f_m = p.f_x = 1;
 
 		if (p.f_x) {
@@ -1499,21 +1498,21 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_sta(Addr ea)
+	INLINE static void op_sta(Addr ea)
 	{
 		TRACE("STA");
 
 		if (e || p.f_m) {
-			mem.setByte(ea, a.b);
+			setByte(ea, a.b);
 			cycles += 2;
 		}
 		else {
-			mem.setWord(ea, a.w);
+			setWord(ea, a.w);
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_stp(Addr ea)
+	INLINE static void op_stp(Addr ea)
 	{
 		TRACE("STP");
 
@@ -1526,49 +1525,49 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_stx(Addr ea)
+	INLINE static void op_stx(Addr ea)
 	{
 		TRACE("STX");
 
 		if (e || p.f_x) {
-			mem.setByte(ea, x.b);
+			setByte(ea, x.b);
 			cycles += 2;
 		}
 		else {
-			mem.setWord(ea, x.w);
+			setWord(ea, x.w);
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_sty(Addr ea)
+	INLINE static void op_sty(Addr ea)
 	{
 		TRACE("STY");
 
 		if (e || p.f_x) {
-			mem.setByte(ea, y.b);
+			setByte(ea, y.b);
 			cycles += 2;
 		}
 		else {
-			mem.setWord(ea, y.w);
+			setWord(ea, y.w);
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_stz(Addr ea)
+	INLINE static void op_stz(Addr ea)
 	{
 		TRACE("STZ");
 
 		if (e || p.f_m) {
-			mem.setByte(ea, 0);
+			setByte(ea, 0);
 			cycles += 2;
 		}
 		else {
-			mem.setWord(ea, 0);
+			setWord(ea, 0);
 			cycles += 3;
 		}
 	}
 
-	INLINE void op_tax(Addr ea)
+	INLINE static void op_tax(Addr ea)
 	{
 		TRACE("TAX");
 
@@ -1580,7 +1579,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tay(Addr ea)
+	INLINE static void op_tay(Addr ea)
 	{
 		TRACE("TAY");
 
@@ -1592,7 +1591,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tcd(Addr ea)
+	INLINE static void op_tcd(Addr ea)
 	{
 		TRACE("TCD");
 
@@ -1600,7 +1599,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tdc(Addr ea)
+	INLINE static void op_tdc(Addr ea)
 	{
 		TRACE("TDC");
 
@@ -1612,7 +1611,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tcs(Addr ea)
+	INLINE static void op_tcs(Addr ea)
 	{
 		TRACE("TCS");
 
@@ -1620,47 +1619,47 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_trb(Addr ea)
+	INLINE static void op_trb(Addr ea)
 	{
 		TRACE("TRB");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
-			mem.setByte(ea, data & ~a.b);
+			setByte(ea, data & ~a.b);
 			setz((a.b & data) == 0);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
-			mem.setWord(ea, data & ~a.w);
+			setWord(ea, data & ~a.w);
 			setz((a.w & data) == 0);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_tsb(Addr ea)
+	INLINE static void op_tsb(Addr ea)
 	{
 		TRACE("TSB");
 
 		if (e || p.f_m) {
-			register Byte data = mem.getByte(ea);
+			register Byte data = getByte(ea);
 
-			mem.setByte(ea, data | a.b);
+			setByte(ea, data | a.b);
 			setz((a.b & data) == 0);
 			cycles += 4;
 		}
 		else {
-			register Word data = mem.getWord(ea);
+			register Word data = getWord(ea);
 
-			mem.setWord(ea, data | a.w);
+			setWord(ea, data | a.w);
 			setz((a.w & data) == 0);
 			cycles += 5;
 		}
 	}
 
-	INLINE void op_tsc(Addr ea)
+	INLINE static void op_tsc(Addr ea)
 	{
 		TRACE("TSC");
 
@@ -1672,7 +1671,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tsx(Addr ea)
+	INLINE static void op_tsx(Addr ea)
 	{
 		TRACE("TSX");
 
@@ -1684,7 +1683,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_txa(Addr ea)
+	INLINE static void op_txa(Addr ea)
 	{
 		TRACE("TXA");
 
@@ -1696,7 +1695,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_txs(Addr ea)
+	INLINE static void op_txs(Addr ea)
 	{
 		TRACE("TXS");
 
@@ -1708,7 +1707,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_txy(Addr ea)
+	INLINE static void op_txy(Addr ea)
 	{
 		TRACE("TXY");
 
@@ -1720,7 +1719,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tya(Addr ea)
+	INLINE static void op_tya(Addr ea)
 	{
 		TRACE("TYA");
 
@@ -1732,7 +1731,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_tyx(Addr ea)
+	INLINE static void op_tyx(Addr ea)
 	{
 		TRACE("TYX");
 
@@ -1744,7 +1743,7 @@ private:
 		cycles += 2;
 	}
 
-	INLINE void op_wai(Addr ea)
+	INLINE static void op_wai(Addr ea)
 	{
 		TRACE("WAI");
 
@@ -1757,17 +1756,17 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_wdm(Addr ea)
+	INLINE static void op_wdm(Addr ea)
 	{
 		TRACE("WDM");
 
-		switch (mem.getByte(ea)) {
+		switch (getByte(ea)) {
 		case 0xff:	stopped = true;  break;
 		}
 		cycles += 3;
 	}
 
-	INLINE void op_xba(Addr ea)
+	INLINE static void op_xba(Addr ea)
 	{
 		TRACE("XBA");
 
@@ -1776,7 +1775,7 @@ private:
 		cycles += 3;
 	}
 
-	INLINE void op_xce(Addr ea)
+	INLINE static void op_xce(Addr ea)
 	{
 		TRACE("XCE");
 

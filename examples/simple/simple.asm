@@ -47,15 +47,16 @@ RESET:
 		lda	#STACK
 		tcs
 		
-		ldy	#2
+		ldy	#100
 		repeat
-		 ldx	#123
+		 ldx	#0
 		 repeat
 		  dex
 		 until eq
 		 dey
 		until eq
-		wdm #$ff
+		wdm	#$ff
+		bra	RESET
 		
 ;===============================================================================
 ; Dummy Interrupt Handlers

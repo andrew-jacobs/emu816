@@ -40,23 +40,20 @@ using namespace std;
 #define	RAM_SIZE	(512 * 1024)
 #define MEM_MASK	(512 * 1024L - 1)
 
-mem816 mem(MEM_MASK, RAM_SIZE, NULL);
-emu816 emu(mem);
-
 bool trace = false;
 
 //==============================================================================
 
 // Initialise the emulator
-void setup()
+INLINE void setup()
 {
-	emu.reset(trace);
+	emu816::setMemory(MEM_MASK, RAM_SIZE, NULL);
 }
 
 // Execute instructions
-void loop()
+INLINE void loop()
 {
-	emu.step();
+	emu816::step();
 }
 
 //==============================================================================
@@ -108,7 +105,7 @@ void load(char *filename)
 				unsigned long addr = toAddr(line, offset);
 				count -= 4;
 				while (count-- > 0) {
-					mem.setByte(addr++, toByte(line, offset));
+					emu816::setByte(addr++, toByte(line, offset));
 				}
 			}
 		}
@@ -122,6 +119,8 @@ void load(char *filename)
 int main(int argc, char **argv)
 {
 	int	index = 1;
+
+	setup();
 
 	while (index < argc) {
 		if (argv[index][0] != '-') break;
@@ -155,16 +154,17 @@ int main(int argc, char **argv)
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
 
-	setup();
-	while (!emu.isStopped ())
+	emu816::reset(trace);
+	while (!emu816::isStopped ())
 		loop();
 
 	QueryPerformanceCounter(&end);
 
 	double secs = (end.QuadPart - start.QuadPart) / (double) freq.QuadPart;
 
-	double speed = emu.getCycles() / secs;
+	double speed = emu816::getCycles() / secs;
 
+	cout << endl << "Executed " << emu816::getCycles() << " in " << secs << " Secs";
 	cout << endl << "Overall CPU Frequency = ";
 	if (speed < 1000.0)
 		cout << speed << " Hz";
@@ -176,5 +176,6 @@ int main(int argc, char **argv)
 	}
 	cout << endl;
 
+	system("pause");
 	return(0);
 }

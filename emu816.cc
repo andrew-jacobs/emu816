@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -32,14 +32,32 @@
 using namespace std;
 #endif
 
+union emu816::FLAGS		emu816::p;
+
+emu816::Bit				emu816::e;
+
+union emu816::REGS		emu816::a;
+union emu816::REGS		emu816::x;
+union emu816::REGS		emu816::y;
+union emu816::REGS		emu816::sp;
+union emu816::REGS		emu816::dp;
+
+emu816::Word			emu816::pc;
+emu816::Byte			emu816::pbr;
+emu816::Byte			emu816::dbr;
+
+bool					emu816::stopped;
+bool					emu816::interrupted;
+unsigned long			emu816::cycles;
+bool					emu816::trace;
+
 //==============================================================================
 
-// Construct a emu816 instance.
-emu816::emu816(mem816 &mem)
-	: mem(mem)
+// Not used.
+emu816::emu816()
 { }
 
-// Destroy a emu816 instance.
+// Not used
 emu816::~emu816()
 { }
 
@@ -51,13 +69,13 @@ void emu816::reset(bool trace)
 	dbr = 0x00 << 16;
 	dp.w = 0x0000;
 	sp.w = 0x0100;
-	pc = mem.getWord(0xfffc);
+	pc = getWord(0xfffc);
 	p.b = 0x34;
 
 	stopped = false;
 	interrupted = false;
 	
-	this -> trace = trace;
+	emu816::trace = trace;
 }
 
 // Execute a single instruction or invoke an interrupt
@@ -67,7 +85,7 @@ void emu816::step()
 
 	SHOWPC();
 
-	switch (mem.getByte (join(pbr, pc++))) {
+	switch (getByte (join(pbr, pc++))) {
 	case 0x00:	op_brk(am_immb());	break;
 	case 0x01:	op_ora(am_dpix());	break;
 	case 0x02:	op_cop(am_immb());	break;
@@ -357,7 +375,7 @@ void emu816::show()
 	Serial.print (':');
 	Serial.print (toHex(pc, 4));
 	Serial.print (' ');
-	Serial.print (toHex(mem.getByte(join(pbr, pc)), 2));
+	Serial.print (toHex(getByte(join(pbr, pc)), 2));
 }
 
 // Display the operand bytes
@@ -365,21 +383,21 @@ void emu816::bytes(unsigned int count)
 {
 	if (count > 0) {
 		Serial.print(' ');
-		Serial.print(toHex(mem.getByte(bank(pbr) | (pc + 0)), 2));
+		Serial.print(toHex(getByte(bank(pbr) | (pc + 0)), 2));
 	}
 	else
 		Serial.print("   ");
 
 	if (count > 1) {
 		Serial.print(' ');
-		Serial.print(toHex(mem.getByte(bank(pbr) | (pc + 1)), 2));
+		Serial.print(toHex(getByte(bank(pbr) | (pc + 1)), 2));
 	}
 	else
 		Serial.print("   ");
 
 	if (count > 2) {
 		Serial.print(' ');
-		Serial.print(toHex(mem.getByte(bank(pbr) | (pc + 2)), 2));
+		Serial.print(toHex(getByte(bank(pbr) | (pc + 2)), 2));
 	}
 	else
 		Serial.print("   ");
@@ -461,13 +479,13 @@ void emu816::dump(const char *mnem, Addr ea)
 	
 	Serial.print(" {");
 	Serial.print(' ');
-	Serial.print(toHex(mem.getByte(sp.w + 1), 2));
+	Serial.print(toHex(getByte(sp.w + 1), 2));
 	Serial.print(' ');
-	Serial.print(toHex(mem.getByte(sp.w + 2), 2));
+	Serial.print(toHex(getByte(sp.w + 2), 2));
 	Serial.print(' ');
-	Serial.print(toHex(mem.getByte(sp.w + 3), 2));
+	Serial.print(toHex(getByte(sp.w + 3), 2));
 	Serial.print(' ');
-	Serial.print(toHex(mem.getByte(sp.w + 4), 2));
+	Serial.print(toHex(getByte(sp.w + 4), 2));
 	Serial.print(" }");
 	
 	Serial.print(" DBR=");
@@ -480,24 +498,24 @@ void emu816::show()
 	cout << '{' << toHex(cycles, 4) << "} ";
 	cout << toHex(pbr, 2);
 	cout << ':' << toHex(pc, 4);
-	cout << ' ' << toHex(mem.getByte(join(pbr, pc)), 2);
+	cout << ' ' << toHex(getByte(join(pbr, pc)), 2);
 }
 
 // Display the operand bytes
 void emu816::bytes(unsigned int count)
 {
 	if (count > 0)
-		cout << ' ' << toHex(mem.getByte(bank(pbr) | (pc + 0)), 2);
+		cout << ' ' << toHex(getByte(bank(pbr) | (pc + 0)), 2);
 	else
 		cout << "   ";
 
 	if (count > 1)
-		cout << ' ' << toHex(mem.getByte(bank(pbr) | (pc + 1)), 2);
+		cout << ' ' << toHex(getByte(bank(pbr) | (pc + 1)), 2);
 	else
 		cout << "   ";
 
 	if (count > 2)
-		cout << ' ' << toHex(mem.getByte(bank(pbr) | (pc + 2)), 2);
+		cout << ' ' << toHex(getByte(bank(pbr) | (pc + 2)), 2);
 	else
 		cout << "   ";
 
@@ -545,10 +563,10 @@ void emu816::dump(const char *mnem, Addr ea)
 		cout << '[' << toHex(hi(sp.w), 2);
 	cout << toHex(sp.b, 2) << ']';
 	cout << " {";
-	cout << ' ' << toHex(mem.getByte(sp.w + 1), 2);
-	cout << ' ' << toHex(mem.getByte(sp.w + 2), 2);
-	cout << ' ' << toHex(mem.getByte(sp.w + 3), 2);
-	cout << ' ' << toHex(mem.getByte(sp.w + 4), 2);
+	cout << ' ' << toHex(getByte(sp.w + 1), 2);
+	cout << ' ' << toHex(getByte(sp.w + 2), 2);
+	cout << ' ' << toHex(getByte(sp.w + 3), 2);
+	cout << ' ' << toHex(getByte(sp.w + 4), 2);
 	cout << " }";
 	cout << " DBR=" << toHex(dbr, 2) << endl;
 }
