@@ -9,7 +9,7 @@
 //                                                                    
 // A Portable C++ WDC 65C816 Emulator  
 //------------------------------------------------------------------------------
-// Copyright (C)2016 Andrew John Jacobs
+// Copyright (C),2016 Andrew John Jacobs
 // All rights reserved.
 //
 // This work is made available under the terms of the Creative Commons
@@ -27,9 +27,12 @@ using namespace std;
 
 #include <string.h>
 
+#ifdef WIN32
 #include "Windows.h"
+#else
+#include <time.h>
+#endif
 
-#include "mem816.h"
 #include "emu816.h"
 
 //==============================================================================
@@ -149,18 +152,31 @@ int main(int argc, char **argv)
 		return (1);
 	}
 
+#ifdef	WIN32
 	LARGE_INTEGER freq, start, end;
 
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
+#else
+	timespec start, end;
+
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+#endif
 
 	emu816::reset(trace);
 	while (!emu816::isStopped ())
 		loop();
 
+#ifdef	LINUX
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+
+	double secs = (end.tv_sec + end.tv_nsec / 1000000000.0)
+		    - (start.tv_sec + start.tv_nsec / 1000000000.0);
+#else
 	QueryPerformanceCounter(&end);
 
 	double secs = (end.QuadPart - start.QuadPart) / (double) freq.QuadPart;
+#endif
 
 	double speed = emu816::getCycles() / secs;
 
@@ -176,6 +192,5 @@ int main(int argc, char **argv)
 	}
 	cout << endl;
 
-	system("pause");
 	return(0);
 }
