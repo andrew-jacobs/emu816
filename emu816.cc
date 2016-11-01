@@ -65,8 +65,8 @@ emu816::~emu816()
 void emu816::reset(bool trace)
 {
 	e = 1;
-	pbr = 0x00 << 16;
-	dbr = 0x00 << 16;
+	pbr = 0x00;
+	dbr = 0x00;
 	dp.w = 0x0000;
 	sp.w = 0x0100;
 	pc = getWord(0xfffc);
@@ -495,7 +495,7 @@ void emu816::dump(const char *mnem, Addr ea)
 // The current PC and opcode byte
 void emu816::show()
 {
-	cout << '{' << toHex(cycles, 4) << "} ";
+//	cout << '{' << toHex(cycles, 4) << "} ";
 	cout << toHex(pbr, 2);
 	cout << ':' << toHex(pc, 4);
 	cout << ' ' << toHex(getByte(join(pbr, pc)), 2);

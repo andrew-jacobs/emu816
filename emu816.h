@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 
-#if 0
+#if 1
 # define TRACE(MNEM)	{ if (trace) dump(MNEM, ea); }
 # define BYTES(N)		{ if (trace) bytes(N); pc += N; }
 # define SHOWPC()		{ if (trace) show(); }
@@ -459,6 +459,11 @@ private:
 		if (e || p.f_m) {
 			Byte	data = getByte(ea);
 			Word	temp = a.b + data + p.f_c;
+			
+			if (p.f_d) {
+				if ((temp & 0x0f) > 0x09) temp += 0x06;
+				if ((temp & 0xf0) > 0x90) temp += 0x60;
+			}
 
 			setc(temp & 0x100);
 			setv((~(a.b ^ data)) & (a.b ^ temp) & 0x80);
@@ -469,7 +474,14 @@ private:
 			Word	data = getWord(ea);
 			int		temp = a.w + data + p.f_c;
 
-			setc(temp & 0x100);
+			if (p.f_d) {
+				if ((temp & 0x000f) > 0x0009) temp += 0x0006;
+				if ((temp & 0x00f0) > 0x0090) temp += 0x0060;
+				if ((temp & 0x0f00) > 0x0900) temp += 0x0600;
+				if ((temp & 0xf000) > 0x9000) temp += 0x6000;
+			}
+			
+			setc(temp & 0x10000);
 			setv((~(a.w ^ data)) & (a.w ^ temp) & 0x8000);
 			setnz_w(a.w = (Word)temp);
 			cycles += 2;
@@ -1443,6 +1455,11 @@ private:
 		if (e || p.f_m) {
 			Byte	data = ~getByte(ea);
 			Word	temp = a.b + data + p.f_c;
+			
+			if (p.f_d) {
+				if ((temp & 0x0f) > 0x09) temp += 0x06;
+				if ((temp & 0xf0) > 0x90) temp += 0x60;
+			}
 
 			setc(temp & 0x100);
 			setv((~(a.b ^ data)) & (a.b ^ temp) & 0x80);
@@ -1453,7 +1470,14 @@ private:
 			Word	data = ~getWord(ea);
 			int		temp = a.w + data + p.f_c;
 
-			setc(temp & 0x100);
+			if (p.f_d) {
+				if ((temp & 0x000f) > 0x0009) temp += 0x0006;
+				if ((temp & 0x00f0) > 0x0090) temp += 0x0060;
+				if ((temp & 0x0f00) > 0x0900) temp += 0x0600;
+				if ((temp & 0xf000) > 0x9000) temp += 0x6000;
+			}
+
+			setc(temp & 0x10000);
 			setv((~(a.w ^ data)) & (a.w ^ temp) & 0x8000);
 			setnz_w(a.w = (Word)temp);
 			cycles += 3;
