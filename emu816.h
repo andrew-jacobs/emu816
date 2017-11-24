@@ -178,7 +178,7 @@ private:
 	// Absolute Indexed Indirect - (a,X)
 	INLINE static Addr am_abxi()
 	{
-		register Addr ia = join(pbr, getWord(bank(pbr) | pc)) + x.w;
+		register Addr ia = join(pbr, getWord(join(pbr, pc))) + x.w;
 
 		BYTES(2);
 		cycles += 4;
@@ -188,7 +188,7 @@ private:
 	// Absolute Long - >a
 	INLINE static Addr am_alng()
 	{
-		Addr ea = getAddr(bank(pbr) | pc);
+		Addr ea = getAddr(join(pbr, pc));
 
 		BYTES(3);
 		cycles += 3;
@@ -198,7 +198,7 @@ private:
 	// Absolute Long Indexed - >a,X
 	INLINE static Addr am_alnx()
 	{
-		register Addr ea = getAddr(bank(pbr) | pc) + x.w;
+		register Addr ea = getAddr(join(pbr, pc)) + x.w;
 
 		BYTES(3);
 		cycles += 3;
@@ -208,7 +208,7 @@ private:
 	// Absolute Indirect Long - [a]
 	INLINE static Addr am_abil()
 	{
-		register Addr ia = bank(0) | getWord(bank(pbr) | pc);
+		register Addr ia = bank(0) | getWord(join(pbr, pc));
 
 		BYTES(2);
 		cycles += 5;
@@ -258,7 +258,7 @@ private:
 	// Direct Page Indexed Indirect - (d,x)
 	INLINE static Addr am_dpix()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 
 		BYTES(1);
 		cycles += 3;
@@ -268,7 +268,7 @@ private:
 	// Direct Page Indirect Indexed - (d),Y
 	INLINE static Addr am_dpiy()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 
 		BYTES(1);
 		cycles += 3;
@@ -278,7 +278,7 @@ private:
 	// Direct Page Indirect Long - [d]
 	INLINE static Addr am_dpil()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 
 		BYTES(1);
 		cycles += 4;
@@ -288,7 +288,7 @@ private:
 	// Direct Page Indirect Long Indexed - [d],Y
 	INLINE static Addr am_dily()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 
 		BYTES(1);
 		cycles += 4;
@@ -332,7 +332,7 @@ private:
 	// Immediate based on size of A/M
 	INLINE static Addr am_immm()
 	{
-		Addr ea = bank(pbr) | pc;
+		Addr ea = join (pbr, pc);
 		unsigned int size = (e || p.f_m) ? 1 : 2;
 
 		BYTES(size);
@@ -343,7 +343,7 @@ private:
 	// Immediate based on size of X/Y
 	INLINE static Addr am_immx()
 	{
-		Addr ea = bank(pbr) | pc;
+		Addr ea = join(pbr, pc);
 		unsigned int size = (e || p.f_x) ? 1 : 2;
 
 		BYTES(size);
@@ -354,7 +354,7 @@ private:
 	// Long Relative - d
 	INLINE static Addr am_lrel()
 	{
-		Word disp = getWord(bank(pbr) | pc);
+		Word disp = getWord(join(pbr, pc));
 
 		BYTES(2);
 		cycles += 2;
@@ -364,7 +364,7 @@ private:
 	// Relative - d
 	INLINE static Addr am_rela()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 
 		BYTES(1);
 		cycles += 1;
@@ -374,7 +374,7 @@ private:
 	// Stack Relative - d,S
 	INLINE static Addr am_srel()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 
 		BYTES(1);
 		cycles += 1;
@@ -388,7 +388,7 @@ private:
 	// Stack Relative Indirect Indexed Y - (d,S),Y
 	INLINE static Addr am_sriy()
 	{
-		Byte disp = getByte(bank(pbr) | pc);
+		Byte disp = getByte(join(pbr, pc));
 		register Word ia;
 
 		BYTES(1);
@@ -857,14 +857,14 @@ private:
 		if (e || p.f_m) {
 			register Byte data = getByte(ea);
 
-			setByte(ea, ++data);
+			setByte(ea, --data);
 			setnz_b(data);
 			cycles += 4;
 		}
 		else {
 			register Word data = getWord(ea);
 
-			setWord(ea, ++data);
+			setWord(ea, --data);
 			setnz_w(data);
 			cycles += 5;
 		}
@@ -1435,7 +1435,7 @@ private:
 	{
 		TRACE("RTL");
 
-		pc = pullWord();
+		pc = pullWord() + 1;
 		pbr = pullByte();
 		cycles += 6;
 	}

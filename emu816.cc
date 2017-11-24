@@ -525,7 +525,9 @@ void emu816::bytes(unsigned int count)
 // Display registers and top of stack
 void emu816::dump(const char *mnem, Addr ea)
 {
-	cout << mnem << " {" << toHex(ea, 4) << '}';
+	cout << mnem << " {";
+	cout << toHex(ea >> 16, 2) << ':';
+	cout << toHex(ea, 4) << '}';
 
 	cout << " E=" << toHex(e, 1);
 	cout << " P=" <<
