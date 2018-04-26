@@ -19,10 +19,6 @@
 // http://creativecommons.org/licenses/by-nc-sa/4.0/
 //------------------------------------------------------------------------------
 
-// TODO: decimal mode
-
-#include "emu816.h"
-
 #ifdef CHIPKIT
 # include "WProgram.h"
 #else
@@ -31,6 +27,8 @@
 
 using namespace std;
 #endif
+
+#include "emu816.h"
 
 union emu816::FLAGS		emu816::p;
 

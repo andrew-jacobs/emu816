@@ -1785,6 +1785,7 @@ private:
 		TRACE("WDM");
 
 		switch (getByte(ea)) {
+		case 0x01:	cout << (char) a.b; break;
 		case 0xff:	stopped = true;  break;
 		}
 		cycles += 3;
