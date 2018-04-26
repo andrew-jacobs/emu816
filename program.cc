@@ -27,7 +27,7 @@ using namespace std;
 
 #include <string.h>
 
-#ifdef WIN32
+#if defined(_WIN32) || defined (_WIN64)
 #include "Windows.h"
 #else
 #include <time.h>
@@ -60,7 +60,7 @@ INLINE void loop()
 }
 
 //==============================================================================
-// S28 Record Loader
+// S19/28 Record Loader
 //------------------------------------------------------------------------------
 
 unsigned int toNybble(char ch)
@@ -79,6 +79,14 @@ unsigned int toByte(string &str, int &offset)
 	return (h | l);
 }
 
+unsigned int toWord(string &str, int &offset)
+{
+	unsigned int	h = toByte(str, offset) << 8;
+	unsigned int	l = toByte(str, offset);
+
+	return (h | l);
+}
+
 unsigned long toAddr(string &str, int &offset)
 {
 	unsigned long	h = toByte(str, offset) << 16;
@@ -87,10 +95,6 @@ unsigned long toAddr(string &str, int &offset)
 
 	return (h | m | l);
 }
-
-//==============================================================================
-// Command Handler
-//------------------------------------------------------------------------------
 
 void load(char *filename)
 {
@@ -102,13 +106,24 @@ void load(char *filename)
 
 		while (!file.eof()) {
 			file >> line;
-			if ((line[0] == 'S') && (line[1] == '2')) {
+			if (line[0] == 'S') {
 				int offset = 2;
-				unsigned int count = toByte(line, offset);
-				unsigned long addr = toAddr(line, offset);
-				count -= 4;
-				while (count-- > 0) {
-					emu816::setByte(addr++, toByte(line, offset));
+
+				if (line[1] == '1') {
+					unsigned int count = toByte(line, offset);
+					unsigned long addr = toWord(line, offset);
+					count -= 3;
+					while (count-- > 0) {
+						emu816::setByte(addr++, toByte(line, offset));
+					}
+				}
+				else if (line[1] == '2') {
+					unsigned int count = toByte(line, offset);
+					unsigned long addr = toAddr(line, offset);
+					count -= 4;
+					while (count-- > 0) {
+						emu816::setByte(addr++, toByte(line, offset));
+					}
 				}
 			}
 		}
@@ -118,6 +133,10 @@ void load(char *filename)
 		cerr << "Failed to open file" << endl;
 
 }
+
+//==============================================================================
+// Command Handler
+//------------------------------------------------------------------------------
 
 int main(int argc, char **argv)
 {
@@ -135,7 +154,7 @@ int main(int argc, char **argv)
 		}
 
 		if (!strcmp(argv[index], "-?")) {
-			cerr << "Usage: emu816 [-t] s28-file ..." << endl;
+			cerr << "Usage: emu816 [-t] s19/28-file ..." << endl;
 			return (1);
 		}
 
