@@ -176,6 +176,8 @@ int main(int argc, char **argv)
 
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
+
+	cin.unsetf(ios_base::skipws);
 #else
 	timespec start, end;
 
