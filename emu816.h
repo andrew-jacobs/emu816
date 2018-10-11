@@ -1384,7 +1384,7 @@ private:
 			register Byte data = getByte(ea);
 			register Byte carry = p.f_c ? 0x80 : 0x00;
 
-			setc(data & 0x80);
+			setc(data & 0x01);
 			setnz_b(data = (data >> 1) | carry);
 			setByte(ea, data);
 			cycles += 4;
@@ -1393,7 +1393,7 @@ private:
 			register Word data = getWord(ea);
 			register Word carry = p.f_c ? 0x8000 : 0x0000;
 
-			setc(data & 0x8000);
+			setc(data & 0x0001);
 			setnz_w(data = (data >> 1) | carry);
 			setWord(ea, data);
 			cycles += 5;
@@ -1407,14 +1407,14 @@ private:
 		if (e || p.f_m) {
 			register Byte carry = p.f_c ? 0x80 : 0x00;
 
-			setc(a.b & 0x80);
+			setc(a.b & 0x01);
 			setnz_b(a.b = (a.b >> 1) | carry);
 			setByte(ea, a.b);
 		}
 		else {
 			register Word carry = p.f_c ? 0x8000 : 0x0000;
 
-			setc(a.w & 0x8000);
+			setc(a.w & 0x0001);
 			setnz_w(a.w = (a.w >> 1) | carry);
 			setWord(ea, a.w);
 		}
