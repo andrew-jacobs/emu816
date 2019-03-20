@@ -286,7 +286,7 @@ void emu816::step()
 	case 0xbc:	op_ldy(am_absx());	break;
 	case 0xbd:	op_lda(am_absx());	break;
 	case 0xbe:	op_ldx(am_absy());	break;
-	case 0xbf:	op_lda(am_alng());	break;
+	case 0xbf:	op_lda(am_alnx());	break;
 
 	case 0xc0:	op_cpy(am_immx());	break;
 	case 0xc1:	op_cmp(am_dpix());	break;
