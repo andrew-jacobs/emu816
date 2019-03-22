@@ -769,7 +769,7 @@ private:
 
 		if (e || p.f_m) {
 			Byte	data = getByte(ea);
-			Word	temp = data - a.b;
+			Word	temp = data - a.b - 1;
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
@@ -777,7 +777,7 @@ private:
 		}
 		else {
 			Word	data = getWord(ea);
-			Addr	temp = data - a.w;
+			Addr	temp = data - a.w - 1;
 
 			setc(temp & 0x10000L);
 			setnz_w((Word)temp);
@@ -820,7 +820,7 @@ private:
 
 		if (e || p.f_x) {
 			Byte	data = getByte(ea);
-			Word	temp = data - x.b;
+			Word	temp = data - x.b - 1;
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
@@ -828,7 +828,7 @@ private:
 		}
 		else {
 			Word	data = getWord(ea);
-			Addr	temp = data - x.w;
+			Addr	temp = data - x.w - 1;
 
 			setc(temp & 0x10000);
 			setnz_w((Word) temp);
@@ -842,7 +842,7 @@ private:
 
 		if (e || p.f_x) {
 			Byte	data = getByte(ea);
-			Word	temp = data - y.b;
+			Word	temp = data - y.b - 1;
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
@@ -850,7 +850,7 @@ private:
 		}
 		else {
 			Word	data = getWord(ea);
-			Addr	temp = data - y.w;
+			Addr	temp = data - y.w - 1;
 
 			setc(temp & 0x10000);
 			setnz_w((Word) temp);
