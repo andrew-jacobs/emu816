@@ -278,7 +278,7 @@ void emu816::step()
 	case 0xb4:	op_ldy(am_dpgx());	break;
 	case 0xb5:	op_lda(am_dpgx());	break;
 	case 0xb6:	op_ldx(am_dpgy());	break;
-	case 0xb7:	op_lda(am_dpil());	break;
+	case 0xb7:	op_lda(am_dily());	break;
 	case 0xb8:	op_clv(am_impl());	break;
 	case 0xb9:	op_lda(am_absy());	break;
 	case 0xba:	op_tsx(am_impl());	break;
@@ -309,7 +309,7 @@ void emu816::step()
 	case 0xd1:	op_cmp(am_dpiy());	break;
 	case 0xd2:	op_cmp(am_dpgi());	break;
 	case 0xd3:	op_cmp(am_sriy());	break;
-	case 0xd4:	op_pei(am_dpgi());	break;
+	case 0xd4:	op_pei(am_dpag());	break;
 	case 0xd5:	op_cmp(am_dpgx());	break;
 	case 0xd6:	op_dec(am_dpgx());	break;
 	case 0xd7:	op_cmp(am_dily());	break;

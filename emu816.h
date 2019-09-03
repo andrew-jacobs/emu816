@@ -769,7 +769,7 @@ private:
 
 		if (e || p.f_m) {
 			Byte	data = getByte(ea);
-			Word	temp = data - a.b - 1;
+			Word	temp = a.b - data;
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
@@ -777,7 +777,7 @@ private:
 		}
 		else {
 			Word	data = getWord(ea);
-			Addr	temp = data - a.w - 1;
+			Addr	temp = a.w - data;
 
 			setc(temp & 0x10000L);
 			setnz_w((Word)temp);
@@ -820,7 +820,7 @@ private:
 
 		if (e || p.f_x) {
 			Byte	data = getByte(ea);
-			Word	temp = data - x.b - 1;
+			Word	temp = x.b - data;
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
@@ -828,7 +828,7 @@ private:
 		}
 		else {
 			Word	data = getWord(ea);
-			Addr	temp = data - x.w - 1;
+			Addr	temp = x.w - data;
 
 			setc(temp & 0x10000);
 			setnz_w((Word) temp);
@@ -842,7 +842,7 @@ private:
 
 		if (e || p.f_x) {
 			Byte	data = getByte(ea);
-			Word	temp = data - y.b - 1;
+			Word	temp = y.b - data;
 
 			setc(temp & 0x100);
 			setnz_b(lo(temp));
@@ -850,7 +850,7 @@ private:
 		}
 		else {
 			Word	data = getWord(ea);
-			Addr	temp = data - y.w - 1;
+			Addr	temp = y.w - data;
 
 			setc(temp & 0x10000);
 			setnz_w((Word) temp);
@@ -1100,8 +1100,8 @@ private:
 	{
 		TRACE("MVN");
 
-		Byte src = getByte(ea + 0);
-		Byte dst = getByte(ea + 1);
+		Byte src = getByte(ea + 1);
+		Byte dst = getByte(ea + 0);
 
 		setByte(join(dbr = dst, y.w++), getByte(join(src, x.w++)));
 		if (--a.w != 0xffff) pc -= 3;
@@ -1112,8 +1112,8 @@ private:
 	{
 		TRACE("MVP");
 
-		Byte src = getByte(ea + 0);
-		Byte dst = getByte(ea + 1);
+		Byte src = getByte(ea + 1);
+		Byte dst = getByte(ea + 0);
 
 		setByte(join(dbr = dst, y.w--), getByte(join(src, x.w--)));
 		if (--a.w != 0xffff) pc -= 3;
@@ -1364,14 +1364,12 @@ private:
 
 			setc(a.b & 0x80);
 			setnz_b(a.b = (a.b << 1) | carry);
-			setByte(ea, a.b);
 		}
 		else {
 			register Word carry = p.f_c ? 0x0001 : 0x0000;
 
 			setc(a.w & 0x8000);
 			setnz_w(a.w = (a.w << 1) | carry);
-			setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
@@ -1409,14 +1407,12 @@ private:
 
 			setc(a.b & 0x01);
 			setnz_b(a.b = (a.b >> 1) | carry);
-			setByte(ea, a.b);
 		}
 		else {
 			register Word carry = p.f_c ? 0x8000 : 0x0000;
 
 			setc(a.w & 0x0001);
 			setnz_w(a.w = (a.w >> 1) | carry);
-			setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
@@ -1819,8 +1815,8 @@ private:
 		p.f_c = oe;
 
 		if (e) {
+			p.b |= 0x30;
 			sp.w = 0x0100 | sp.b;
-			dp.w = 0x0000;
 		}
 		cycles += 2;
 	}
