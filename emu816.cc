@@ -118,7 +118,7 @@ void emu816::step()
 	case 0x1e:	op_asl(am_absx());	break;
 	case 0x1f:	op_ora(am_alnx());	break;
 
-	case 0x20:	op_jsr(am_absl());	break;
+	case 0x20:	op_jsr(am_absl2());	break;
 	case 0x21:	op_and(am_dpix());	break;
 	case 0x22:	op_jsl(am_alng());	break;
 	case 0x23:	op_and(am_srel());	break;
@@ -164,7 +164,7 @@ void emu816::step()
 	case 0x49:	op_eor(am_immm());	break;
 	case 0x4a:	op_lsra(am_impl());	break;
 	case 0x4b:	op_phk(am_impl());	break;
-	case 0x4c:	op_jmp(am_absl());	break;
+	case 0x4c:	op_jmp(am_absl2());	break;
 	case 0x4d:	op_eor(am_absl());	break;
 	case 0x4e:	op_lsr(am_absl());	break;
 	case 0x4f:	op_eor(am_alng());	break;
@@ -176,7 +176,7 @@ void emu816::step()
 	case 0x54:	op_mvn(am_immw());	break;
 	case 0x55:	op_eor(am_dpgx());	break;
 	case 0x56:	op_lsr(am_dpgx());	break;
-	case 0x57:	op_eor(am_dpil());	break;
+	case 0x57:	op_eor(am_dpiy());	break;
 	case 0x58:	op_cli(am_impl());	break;
 	case 0x59:	op_eor(am_absy());	break;
 	case 0x5a:	op_phy(am_impl());	break;
