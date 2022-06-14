@@ -145,6 +145,16 @@ private:
 		return (ea);
 	}
 
+	// Absolute - a (fix for 4c and 20)
+	INLINE static Addr am_absl2()
+	{
+		register Addr	ea = join(pbr, getWord(bank(pbr) | pc));
+
+		BYTES(2);
+		cycles += 2;
+		return (ea);
+	}
+
 	// Absolute Indexed X - a,X
 	INLINE static Addr am_absx()
 	{
@@ -168,7 +178,7 @@ private:
 	// Absolute Indirect - (a)
 	INLINE static Addr am_absi()
 	{
-		register Addr ia = join(0, getWord(bank(pbr) | pc));
+		register Addr ia = join(pbr, getWord(bank(pbr) | pc));
 
 		BYTES(2);
 		cycles += 4;
@@ -531,12 +541,12 @@ private:
 		if (e || p.f_m) {
 			setc(a.b & 0x80);
 			setnz_b(a.b <<= 1);
-			setByte(ea, a.b);
+			//setByte(ea, a.b);
 		}
 		else {
 			setc(a.w & 0x8000);
 			setnz_w(a.w <<= 1);
-			setWord(ea, a.w);
+			//setWord(ea, a.w);
 		}
 		cycles += 2;
 	}
@@ -771,7 +781,7 @@ private:
 			Byte	data = getByte(ea);
 			Word	temp = a.b - data;
 
-			setc(temp & 0x100);
+			setc(a.b >= data);
 			setnz_b(lo(temp));
 			cycles += 2;
 		}
@@ -779,7 +789,7 @@ private:
 			Word	data = getWord(ea);
 			Addr	temp = a.w - data;
 
-			setc(temp & 0x10000L);
+			setc(a.w >= data);
 			setnz_w((Word)temp);
 			cycles += 3;
 		}
@@ -822,7 +832,7 @@ private:
 			Byte	data = getByte(ea);
 			Word	temp = x.b - data;
 
-			setc(temp & 0x100);
+			setc(x.b >= data);
 			setnz_b(lo(temp));
 			cycles += 2;
 		}
@@ -830,7 +840,7 @@ private:
 			Word	data = getWord(ea);
 			Addr	temp = x.w - data;
 
-			setc(temp & 0x10000);
+			setc(x.w >= data);
 			setnz_w((Word) temp);
 			cycles += 3;
 		}
@@ -844,7 +854,7 @@ private:
 			Byte	data = getByte(ea);
 			Word	temp = y.b - data;
 
-			setc(temp & 0x100);
+			setc(y.b >= data);
 			setnz_b(lo(temp));
 			cycles += 2;
 		}
@@ -852,7 +862,7 @@ private:
 			Word	data = getWord(ea);
 			Addr	temp = y.w - data;
 
-			setc(temp & 0x10000);
+			setc(y.w >= data);
 			setnz_w((Word) temp);
 			cycles += 3;
 		}
@@ -1432,7 +1442,6 @@ private:
 			pbr = pullByte();
 			cycles += 7;
 		}
-		p.f_i = 0;
 	}
 
 	INLINE static void op_rtl(Addr ea)
